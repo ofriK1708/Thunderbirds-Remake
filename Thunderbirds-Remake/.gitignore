@@ -113,6 +113,11 @@ InitTestScene*.unity*
 # Course lecture slides - copyrighted by the lecturer, repo is public. Share privately.
 /docs/study materials/
 
+# Downloaded asset packs (raw downloads). Copy only the sprites we use into Assets/Art/ with their licence file.
+/docs/*.zip
+/docs/kenney_*/
+/docs/Foozle_*/
+
 # OS junk
 .DS_Store
 Thumbs.db

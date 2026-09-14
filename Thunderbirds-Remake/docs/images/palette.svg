@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="210" viewBox="0 0 900 210" font-family="Consolas, 'Courier New', monospace">
   <rect width="900" height="210" fill="#1C1C1C"/>
-  <text x="20" y="30" fill="#FFFFEC" font-size="18">Thunderbirds: Heavy Lift — palette (sampled from the 1985 C64 original)</text>
+  <text x="20" y="30" fill="#FFFFEC" font-size="18">Thunderbirds: Heavy Lift — palette (based on the 1985 C64 original)</text>
 
   <g font-size="12" fill="#FFFFEC">
     <rect x="20"  y="50" width="90" height="90" fill="#101010" stroke="#555" stroke-width="1"/>
@@ -12,8 +12,8 @@
     <rect x="220" y="50" width="90" height="90" fill="#785828"/>
     <text x="220" y="160">sandShadow</text><text x="220" y="176">#785828</text>
 
-    <rect x="320" y="50" width="90" height="90" fill="#A0A0FF" stroke="#101010" stroke-width="6"/>
-    <text x="320" y="160">blockBlue</text><text x="320" y="176">#A0A0FF</text>
+    <rect x="320" y="50" width="90" height="90" fill="#008080" stroke="#101010" stroke-width="6"/>
+    <text x="320" y="160">blockTeal</text><text x="320" y="176">#008080</text>
 
     <rect x="420" y="50" width="90" height="90" fill="#FFFF40" stroke="#101010" stroke-width="6"/>
     <text x="420" y="160">blockYellow</text><text x="420" y="176">#FFFF40</text>

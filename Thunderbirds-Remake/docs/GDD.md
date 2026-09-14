@@ -1,15 +1,15 @@
 # Game Design Document — *Thunderbirds: Heavy Lift*
 
-| | |
-|---|---|
-| **Working title** | Thunderbirds: Heavy Lift |
-| **Team** | ofriK1708 (Rules layer), Partner — name TBA (Unity layer) — roles swap for polish, see §7 |
-| **Genre** | Real-time 2D puzzle / two-ship rescue |
-| **Target platform** | PC (Windows x64) standalone build; Android build as polish |
-| **Engine / Unity version** | Unity 6 (6000.3.20f1), URP 2D Renderer |
-| **Orientation & reference resolution** | Landscape 16:9, 1920 × 1080 reference; levels are one screen of ~32 × 18 cells |
-| **Expected session length** | 1–4 minutes per level; ~20 minutes for all MVP levels |
-| **Document version** | v0.1 — 2026-09-14 |
+| |                                                                                  |
+|---|----------------------------------------------------------------------------------|
+| **Working title** | Thunderbirds: Heavy Lift                                                         |
+| **Team** | Ofri Kuperberg, Rotem Saraf
+| **Genre** | Real-time 2D puzzle / two-ship rescue                                            |
+| **Target platform** | PC (Windows x64) standalone build; Android build as polish                       |
+| **Engine / Unity version** | Unity 6 (6000.3.20f1), URP 2D Renderer                                           |
+| **Orientation & reference resolution** | Landscape 16:9, 1920 × 1080 reference; levels are one screen of ~32 × 18 cells   |
+| **Expected session length** | 1–4 minutes per level; ~20 minutes for all MVP levels                            |
+| **Document version** | v0.1 — 2026-09-14                                                                |
 
 ---
 
@@ -34,7 +34,7 @@ A level-based rescue puzzle game. Each level is a side-view tomb maze. You pilot
   **Not taking / doing differently:** top-down view (we are **side-view with gravity**); one connected flip-screen tomb (we use **separate single-screen levels**); the equipment loadout screen and points-per-ton economy; fuel (replaced by **oxygen**); save/load of a game position (replaced by **Restart** and **lives**).
 - **Secondary reference:** *Boulder Dash* — real-time play on a logical grid with blocks that fall on their own. We take the "grid rules, continuous feel" model.
 - **Video:** [C64 Thunderbirds gameplay (from 0:58)](https://youtu.be/l7JSYmzShfg?t=58) — the two craft taking turns to shift coloured slabs through the tomb against the clock.
-- **What the screenshot shows us:** the sandstone-and-black palette and coloured slabs directly inspire our tomb look and blue / yellow / red block classes; the E–F fuel gauge and timer become our single **oxygen bar**; the score panel is dropped (no score in the MVP).
+- **What the screenshot shows us:** the sandstone-and-black palette and coloured slabs directly inspire our tomb look and teal / yellow / red block classes (our teal replaces the original's light blue); the E–F fuel gauge and timer become our single **oxygen bar**; the score panel is dropped (no score in the MVP).
 
 ---
 
@@ -79,7 +79,7 @@ stateDiagram-v2
 
 **Blocks**
 - A block is a **rigid shape of cells of any form** (L-shapes included), defined in the level file. **Weight = number of cells.** Blocks never merge, tip or rotate, and each keeps its own clear outline.
-- **Colour class:** **Blue** — weight ≤ Kestrel's `pushCapacity`; **Yellow** — weight ≤ Atlas's `pushCapacity`; **Red** — heavier than Atlas can move. A single block may not be authored red (the level validator rejects it); red appears only when a group is too heavy for any ship.
+- **Colour class:** **Teal** — weight ≤ Kestrel's `pushCapacity`; **Yellow** — weight ≤ Atlas's `pushCapacity`; **Red** — heavier than Atlas can move. A single block may not be authored red (the level validator rejects it); red appears only when a group is too heavy for any ship.
 - A block is **supported if any of its bottom cells rests on something** (wall, block or ship). An unsupported block falls one cell per `fallStepSeconds`, taking whatever rests only on it along.
 
 **Push** — moving sideways into blocks in front of the ship
@@ -211,7 +211,7 @@ HUD layout (1920 × 1080)
 
 1. **Main Menu** — title *Thunderbirds: Heavy Lift*; buttons **Play**, **How to Play**, **Options**, **Quit**.
 2. **Level Select** — tiles L1–L5: locked (padlock), unlocked, completed (✓); **Back**.
-3. **How to Play** — reachable from Main Menu and Pause. Covers: controls (current device bindings); Kestrel vs Atlas (size, speed, capacities — **read live from `ShipConfig`** so the text never goes stale); what blue / yellow / red mean; carrying and release (the slot example); crush countdown; lives; oxygen. **Back** returns to where it was opened.
+3. **How to Play** — reachable from Main Menu and Pause. Covers: controls (current device bindings); Kestrel vs Atlas (size, speed, capacities — **read live from `ShipConfig`** so the text never goes stale); what teal / yellow / red mean; carrying and release (the slot example); crush countdown; lives; oxygen. **Back** returns to where it was opened.
 4. **Game HUD** — top-left: oxygen bar + seconds (turns red under 15 s) and 3 life icons; top-right: active ship portrait + `SwitchShip` hint. In the world: highlight outline on the active ship, plus a bright pulse right after each switch; countdown ring above a stressed ship; blinking ghost for a waiting respawn. At level start: a short hint banner from `LevelData.hintText`.
    **Deliberately absent:** weight numbers on blocks — weight is read from colour, and faint cell seams let the player count cells. Also absent: score and minimap.
 5. **Pause** — **Resume**, **Restart**, **How to Play**, **Options**, **Level Select**, **Main Menu**. Leaving the level asks no confirmation in the MVP (levels are short); a "Leave level?" confirm is polish if playtests show accidental exits.
@@ -228,16 +228,16 @@ HUD layout (1920 × 1080)
 
 **Art direction:** a dark sandstone tomb with bright, readable rescue craft. We use outside sprites but never depend on a sprite made for a specific shape: **every block is built from one cell sprite**. Each cell checks its four neighbours for "part of my block?" and draws a thick dark border only on the sides where it isn't (plus a corner piece where a shape bends inward). Two touching yellow blocks therefore show a clear double line between them; one big yellow block shows only faint seams.
 
-**Palette** — sampled directly from the C64 original (§2) so the remake reads as its descendant. These exact values are the defaults for the colour fields in `GameConfig`.
+**Palette** — sampled from the C64 original (§2) so the remake reads as its descendant; the one deliberate change is teal for light blocks. Teal is the darkest block colour, so its cell seams are drawn light (white at low opacity) rather than dark. These exact values are the defaults for the colour fields in `GameConfig`.
 
-![Palette swatches: tomb void, sandstone, sand shadow, block blue, block yellow, block red, dock lit, UI muted, UI text](images/palette.svg)
+![Palette swatches: tomb void, sandstone, sand shadow, block teal, block yellow, block red, dock lit, UI muted, UI text](images/palette.svg)
 
 | Token | Hex | Use |
 |---|---|---|
 | `tombVoid` | `#101010` | Corridors / background behind the maze |
 | `sandstone` | `#E0A040` | Wall and floor tiles |
 | `sandShadow` | `#785828` | Tile speckle, wall edges, block borders on light tiles |
-| `blockBlue` | `#A0A0FF` | Blocks any ship can move |
+| `blockTeal` | `#008080` | Blocks any ship can move (team choice, replacing the original's light blue `#A0A0FF`) |
 | `blockYellow` | `#FFFF40` | Blocks only Atlas can move |
 | `blockRed` | `#E04040` | Chain flash when a group is too heavy for any ship; stress flash |
 | `dockLit` | `#40E040` | Dock pads when their ship is docked |
@@ -248,10 +248,10 @@ Colour is never the only cue: a block's class can also be read by counting its c
 
 | Asset | Variants / frames | Source & licence | Use |
 |---|---|---|---|
-| Block cell | 1 tile sprite, tinted per colour class | Kenney tile pack, CC0 | All blocks, any shape |
+| Block cell | 1 plain, borderless, near-white tile — tinted per colour class | CC0 tile — chosen with the final art style | All blocks, any shape |
 | Block border & inner-corner pieces | 1 edge strip + 1 corner | Made by team | Per-block outlines |
-| Wall / floor tiles | 3–4 sandstone variants | Kenney tile pack, CC0 | Level geometry |
-| Kestrel, Atlas | 1 body + thruster frames each | Kenney *Space Shooter Redux*, CC0 | Ships |
+| Wall / floor tiles | 3–4 sandstone variants | CC0 tile pack — chosen with the final art style | Level geometry |
+| Kestrel, Atlas | 1 body + thruster frames each | CC0 ship pack — chosen with the final art style (candidates below) | Ships |
 | Dock pads | 2 sizes (2 × 2, 4 × 2) + lit state | Made by team | Win targets |
 | UI font | Orbitron | Google Fonts, SIL OFL | All UI |
 | SFX — step hum, bump, land, release, stress creak, crush, dock, switch, UI click | 1–2 each | Kenney audio packs (CC0) / generated with jsfxr | *Polish* |
@@ -259,7 +259,16 @@ Colour is never the only cue: a block's class can also be read by counting its c
 
 **Licence note:** all listed assets are CC0, OFL, or made by us, and may be used in the submission and a public build (CC-BY tracks will be credited in the menu). We do **not** use the original *Thunderbirds* theme — the composition is copyrighted, so even free recordings of it are off-limits. "Thunderbirds" is a trademark (ITV); the title is acceptable for a private university project, but a public release would be renamed (e.g. *Heavy Lift: Tomb Rescue*). The ship names Kestrel and Atlas are ours.
 
-**Technical art rules:** 1 grid cell = 1 world unit = 64 px (PPU 64); Bilinear filtering; one SpriteAtlas; sorting layers back → front: `Background → Walls → Docks → Blocks → Ships → Effects → UI`; URP 2D Renderer.
+**Final art pack — decided after GDD approval.** The design does not depend on specific sprites, only on these requirements:
+- **CC0 (or OFL/CC-BY with credit) only**, licence file kept next to the assets in `Assets/Art/`.
+- **Ship silhouettes fit their footprints** without stretching: Kestrel ≈ square (2 × 2), Atlas ≈ twice as wide as tall (4 × 2), readable at the in-game size.
+- **Ships must not be red-dominant**, so the red stress and "too heavy" flashes stay visible.
+- **One consistent style** for ships, tiles, blocks and docks — no mixing pixel art with vector art.
+- **Block cell tile is plain, borderless and near-white**, so tinting gives true teal / yellow / red and one block of many cells reads as a single piece.
+
+Candidates under review: *Kenney Space Shooter Extension* (vector, CC0 — licence file checked; Kestrel `spaceShips_003`, Atlas `spaceRockets_002` lying flat) and *Void – Fleet Pack 2 (Nairan)* by Baldur, distributed by Foozle (pixel art, CC0 — licence file checked; Kestrel = Scout/Fighter, Atlas = Torpedo Ship).
+
+**Technical art rules:** sorting layers back → front: `Background → Walls → Docks → Blocks → Ships → Effects → UI`; one SpriteAtlas; URP 2D Renderer; 1 grid cell = 1 world unit. Import settings follow the chosen style — vector: Bilinear filtering, PPU 64; pixel art: Point (no filter), PPU = art pixels per cell, Pixel Perfect Camera, every sprite on the same pixel scale.
 
 ---
 
@@ -345,7 +354,7 @@ graph TD
 #11...#....#............d..2222#
 ################################
 ```
-*(`b` = 4-cell L resting on a ledge — blue; `c` = 8-cell block carried by Atlas — yellow; `d` = 3-cell L on the floor — blue.)*
+*(`b` = 4-cell L resting on a ledge — teal; `c` = 8-cell block carried by Atlas — yellow; `d` = 3-cell L on the floor — teal.)*
 
 | Char | Meaning | Validation |
 |---|---|---|
@@ -378,7 +387,7 @@ graph TD
 - [ ] `MainMenu` and `Game` scenes; Main Menu, Level Select (unlocking, `PlayerPrefs`), How to Play (from menu and pause), Options (fullscreen), Pause, Failed, Complete
 - [ ] Kestrel 2 × 2 and Atlas 4 × 2; instant switching with a highlight pulse on the new active ship; `kestrelSpeedRatio`
 - [ ] Held-direction grid movement with smooth back-to-back steps, tilt and hover bob
-- [ ] Blocks of any rigid shape from the text grid; weight = cells; blue / yellow / red classes; one-sprite cells with clear per-block borders
+- [ ] Blocks of any rigid shape from the text grid; weight = cells; teal / yellow / red classes; one-sprite cells with clear per-block borders
 - [ ] Push chains, lift, Carried state, release on obstacles, falls-first gravity
 - [ ] Load, Stressed state (shake, red flash, world-space countdown ring), crush
 - [ ] 3 lives per level, ghost respawn at start cell, level failure on last life
