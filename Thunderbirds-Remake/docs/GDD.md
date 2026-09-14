@@ -1,8 +1,8 @@
-# Game Design Document — *Thunderbirds: Heavy Lift*
+# Game Design Document — *Thunderbirds: Remake*
 
 | |                                                                                  |
 |---|----------------------------------------------------------------------------------|
-| **Working title** | Thunderbirds: Heavy Lift                                                         |
+| **Working title** | Thunderbirds: Remake                                                        |
 | **Team** | Ofri Kuperberg, Rotem Saraf
 | **Genre** | Real-time 2D puzzle / two-ship rescue                                            |
 | **Target platform** | PC (Windows x64) standalone build; Android build as polish                       |
