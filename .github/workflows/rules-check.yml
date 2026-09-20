@@ -16,7 +16,7 @@ jobs:
           lfs: false # LFS pointers are what the R10 check inspects
 
       - name: Fetch the base branch
-        run: git fetch origin ${{ github.base_ref || 'main' }} --depth=0
+        run: git fetch origin ${{ github.base_ref || 'main' }}
 
       - name: Run collaboration rule checks
         shell: pwsh
