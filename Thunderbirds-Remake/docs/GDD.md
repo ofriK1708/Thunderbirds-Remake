@@ -365,7 +365,7 @@ graph TD
 
 **Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`.
 
-**Team workflow:** Person A owns the Rules layer and its tests; Person B owns the Unity layer and both scenes (Unity scene files merge badly, so one owner per scene). The event contract above is agreed in week 1 so B can build views against a fake event source. Level design and GDD updates are shared. Roles swap for polish so both can explain all code. After each tested feature: bump `bundleVersion`, update this GDD if rules changed, commit.
+**Team workflow:** both teammates work across every layer — each milestone gives each person rules-layer, view/UI and level-design issues — so both can explain any file. Only **scene ownership** is fixed, because `.unity` files cannot be merged: Ofri owns `Game.unity`, Rotem owns `MainMenu.unity`, and anything the non-owner needs in a scene arrives as a prefab. The event contract above is agreed in a day-one pair session, together with a fake simulation, so views can be built before the rules exist. Every PR is reviewed by the other person. After each tested feature: bump `bundleVersion`, update this GDD if rules changed, commit. Full rules — binding for humans and AI assistants, and enforced by `tools/check-rules.ps1` and CI — are in [`COLLABORATION.md`](COLLABORATION.md). Work is tracked as GitHub issues #1–#27 under milestones *M1 - Playable core* (26 Sep) and *M2 - MVP complete* (4 Oct).
 
 ### The course features we are implementing
 

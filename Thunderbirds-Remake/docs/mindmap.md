@@ -2,6 +2,8 @@
 
 ## Core Game Design
 * **Game Design Document (GDD):** `docs/GDD.md` (Check before any commit)
+* **Collaboration rules (humans + AI):** `docs/COLLABORATION.md` — checked by `tools/check-rules.ps1` and by CI on every PR
+* **Work plan:** GitHub issues #1–#27, milestones *M1 - Playable core* (Sep 26) and *M2 - MVP complete* (Oct 4)
 * **Original Game Context:** `docs/A through explanation of the original game .pdf`
 
 ## Course Assignments

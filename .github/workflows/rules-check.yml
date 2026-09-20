@@ -1,0 +1,26 @@
+name: Collaboration rules
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the PR branch with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: false # LFS pointers are what the R10 check inspects
+
+      - name: Fetch the base branch
+        run: git fetch origin ${{ github.base_ref || 'main' }} --depth=0
+
+      - name: Run collaboration rule checks
+        shell: pwsh
+        run: |
+          ./Thunderbirds-Remake/tools/check-rules.ps1 `
+            -Base origin/${{ github.base_ref || 'main' }} `
+            -Actor ${{ github.event.pull_request.user.login || github.actor }}
