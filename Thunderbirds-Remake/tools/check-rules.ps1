@@ -9,7 +9,9 @@
 [CmdletBinding()]
 param(
     [string]$Base,
-    [string]$Actor
+    [string]$Actor,
+    # Audit the whole repo instead of only the files this branch changed.
+    [switch]$All
 )
 
 $ErrorActionPreference = 'Stop'
@@ -67,7 +69,10 @@ function Warn([string]$rule, [string]$msg, $items) {
 }
 
 function Get-Matches([string]$glob, [string]$pattern, [string[]]$excludeGlobs) {
-    $files = $scanFiles | Where-Object { $_ -like $glob }
+    # Content rules judge the code this branch touches, not code that was already on main.
+    # Use -All for a full-repo audit.
+    $pool = if ($All -or -not $changed) { $scanFiles } else { $scanFiles | Where-Object { $changed -contains $_ } }
+    $files = $pool | Where-Object { $_ -like $glob }
     foreach ($ex in $excludeGlobs) { $files = $files | Where-Object { $_ -notlike $ex } }
     $hits = @()
     foreach ($f in $files) {
