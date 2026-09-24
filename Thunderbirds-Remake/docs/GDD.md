@@ -356,6 +356,8 @@ graph TD
 ```
 *(`b` = 4-cell L resting on a ledge — teal; `c` = 8-cell block carried by Atlas — yellow; `d` = 3-cell L on the floor — teal.)*
 
+**Why text, not scene-built or Tilemap levels:** (1) a block is "every cell with the same letter", which gives arbitrary rigid shapes and their weight directly — a Tilemap knows only tiles, not which tiles form one block; (2) the rules layer and its Edit Mode tests parse levels without loading a scene, so every level can be validated by a test; (3) `.unity` files can't be merged, so scene-built levels would let only the scene owner design them — text diffs cleanly and both teammates can author levels; (4) Restart and respawn rebuild the grid from the immutable `LevelDefinition` without a scene reload; (5) the polish level editor only has to write the same format. The cost — no visual editing — is covered by readable parser errors and the Inspector grid preview (polish #11).
+
 | Char | Meaning | Validation |
 |---|---|---|
 | `#` / `.` | wall / empty | — |
@@ -363,7 +365,7 @@ graph TD
 | `1` / `2` | Kestrel dock (2 × 2) / Atlas dock (4 × 2) | exactly one each, exact size |
 | `a`–`z` | a block — all cells with the same letter form one block | connected shape; weight ≤ Atlas `pushCapacity` (no authored red blocks) |
 
-**Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`.
+**Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`. A full input → tick → events → views trace of one move is in [`move-flow.md`](move-flow.md).
 
 **Team workflow:** both teammates work across every layer — each milestone gives each person rules-layer, view/UI and level-design issues — so both can explain any file. Only **scene ownership** is fixed, because `.unity` files cannot be merged: Ofri owns `Game.unity`, Rotem owns `MainMenu.unity`, and anything the non-owner needs in a scene arrives as a prefab. The event contract above is agreed in a day-one pair session, together with a fake simulation, so views can be built before the rules exist. Every PR is reviewed by the other person. After each tested feature: bump `bundleVersion`, update this GDD if rules changed, commit. Full rules — binding for humans and AI assistants, and enforced by `tools/check-rules.ps1` and CI — are in [`COLLABORATION.md`](COLLABORATION.md). Work is tracked as GitHub issues #1–#27 under milestones *M1 - Playable core* (26 Sep) and *M2 - MVP complete* (4 Oct).
 
@@ -432,3 +434,4 @@ graph TD
 | Version | Date | Change |
 |---|---|---|
 | v0.1 | 2026-09-14 | Initial draft: concept, rules, controls, screens, art, architecture and scope agreed in design session |
+| v0.1.1 | 2026-09-24 | §7: rationale for text-based levels; one-move sequence diagram added in [`move-flow.md`](move-flow.md) |
