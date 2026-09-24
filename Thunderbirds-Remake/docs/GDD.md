@@ -365,7 +365,15 @@ graph TD
 | `1` / `2` | Kestrel dock (2 × 2) / Atlas dock (4 × 2) | exactly one each, exact size |
 | `a`–`z` | a block — all cells with the same letter form one block | connected shape; weight ≤ Atlas `pushCapacity` (no authored red blocks) |
 
-**Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`. A full input → tick → events → views trace of one move is in [`move-flow.md`](move-flow.md).
+**Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`. Their argument types are in `Assets/Scripts/Rules/Contract/SimEvents.cs`; the decisions behind them are recorded on issue #3.
+
+- **Interface:** `ISimulation` exposes `State` (read-only), `Events`, `Tick(dt)`, `SetHeldDirection(Direction?)`, `SwitchShip()`, `Restart()`. Input reports the *held* direction only; the simulation decides when the active ship steps (the step timer is a rule because it decides races with falling blocks), and a tap shorter than one step still produces one step.
+- **Delivery:** every event goes through one `EventHub`: it is appended to `Events.Log` at once, and listeners are notified in order **after the whole tick** (step 8), so views never see a half-updated grid. Tests assert on the log; views subscribe to typed C# events.
+- **Events say what changed; `State` says what is.** Shapes, weights and colour classes are read from `State`. Timed events (`ShipMoved`, `BlockMoved`, `BlockFell`) carry `stepSeconds` so the slide lasts exactly as long as the rule. `OxygenChanged` is raised only when the whole second changes.
+- **Conventions:** `GridPos(x, y)` with y = 0 at the bottom row; a ship's or block's position is its bottom-left cell.
+- **`FakeSimulation`** replays a scripted `FakeScript` (`.At(seconds, event)`) through the same `EventHub`, so views are built and tuned before the rules exist.
+
+A full input → tick → events → views trace of one move is in [`move-flow.md`](move-flow.md).
 
 **Team workflow:** both teammates work across every layer — each milestone gives each person rules-layer, view/UI and level-design issues — so both can explain any file. Only **scene ownership** is fixed, because `.unity` files cannot be merged: Ofri owns `Game.unity`, Rotem owns `MainMenu.unity`, and anything the non-owner needs in a scene arrives as a prefab. The event contract above is agreed in a day-one pair session, together with a fake simulation, so views can be built before the rules exist. Every PR is reviewed by the other person. After each tested feature: bump `bundleVersion`, update this GDD if rules changed, commit. Full rules — binding for humans and AI assistants, and enforced by `tools/check-rules.ps1` and CI — are in [`COLLABORATION.md`](COLLABORATION.md). Work is tracked as GitHub issues #1–#27 under milestones *M1 - Playable core* (26 Sep) and *M2 - MVP complete* (4 Oct).
 
@@ -435,3 +443,4 @@ graph TD
 |---|---|---|
 | v0.1 | 2026-09-14 | Initial draft: concept, rules, controls, screens, art, architecture and scope agreed in design session |
 | v0.1.1 | 2026-09-24 | §7: rationale for text-based levels; one-move sequence diagram added in [`move-flow.md`](move-flow.md) |
+| v0.1.2 | 2026-09-24 | §7: simulation contract agreed in pair session (#3) — `SetHeldDirection` replaces `TryMove`, events queued and flushed after each tick, event arguments, grid conventions, `FakeSimulation` |

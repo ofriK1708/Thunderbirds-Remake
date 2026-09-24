@@ -71,10 +71,10 @@ sequenceDiagram
     SIM->>WIN: 8. BothDocked?
     WIN-->>SIM: false
 
-    Note over SIM: flush queued events [open]
+    Note over SIM: flush queued events (EventHub.Flush)
     SIM-)SV: ShipMoved(kestrel, from, to, 0.08 s)
     SIM-)BV: BlockMoved(d, from, to)
-    SIM-)HUD: OxygenChanged(89.98)
+    Note over SIM,HUD: OxygenChanged only when the whole second changes (e.g. 90 → 89)
 
     SV->>SV: StartCoroutine(Slide + tilt)
     BV->>BV: StartCoroutine(Slide)
@@ -86,7 +86,7 @@ sequenceDiagram
 
     Player->>IS: release →
     IS->>IR: Move.canceled
-    IR->>LC: SetHeldDirection(None)
+    IR->>LC: SetHeldDirection(null)
     Note over SIM: next expired cooldown does nothing
 ```
 
@@ -114,11 +114,13 @@ beats a ship entering the same cell on the same tick.
 
 ## Open questions
 
-1. **Event delivery** — raise events mid-tick, or queue them and flush after step 8? Queuing means views
-   never see a half-updated grid (e.g. before `CarryTracker` has run).
-2. **Step cooldown location** — assumed per-ship state in the Simulation; the GDD only states the rate.
-3. **Sub-frame taps** — "a tap shorter than one step still produces one step" needs `InputReader` to latch a
-   press that is released within the same frame.
-4. **`ShipMoved` payload** — does it carry the step duration, or does `ShipView` read it from `ShipConfig`?
-5. **Refused move and cooldown** — does a bump start a cooldown? Decides whether holding → against a wall
+Questions 1–4 were decided in the #3 pair session (see the issue comment and GDD §7).
+
+1. ~~**Event delivery**~~ — **queued, flushed once after step 8** (`EventHub`). Views never see a half-updated grid.
+2. ~~**Step cooldown location**~~ — **per-ship state in the Simulation.** Use an accumulator
+   (`timer -= stepSeconds`, not `= 0`) so ship speed doesn't depend on frame rate.
+3. ~~**Sub-frame taps**~~ — **latched in the Simulation, not `InputReader`**: pressing a direction sets a
+   "pressed since last step" flag that the next step consumes, even if the key was already released.
+4. ~~**`ShipMoved` payload**~~ — **carries `stepSeconds`**; views never read ship speed from config.
+5. **Refused move and cooldown** *(still open — decide in #7)* — does a bump start a cooldown? Decides whether holding → against a wall
    bumps once or repeatedly.
