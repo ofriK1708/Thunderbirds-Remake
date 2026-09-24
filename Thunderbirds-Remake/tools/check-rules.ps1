@@ -77,10 +77,42 @@ function Get-Matches([string]$glob, [string]$pattern, [string[]]$excludeGlobs) {
     $hits = @()
     foreach ($f in $files) {
         if (-not (Test-Path $f)) { continue }
-        $m = Select-String -Path $f -Pattern $pattern -SimpleMatch:$false -ErrorAction SilentlyContinue
-        foreach ($x in $m) { $hits += "$($x.Path):$($x.LineNumber): $($x.Line.Trim())" }
+        $lineNo = 0
+        $inBlock = $false
+        foreach ($line in Get-Content -LiteralPath $f) {
+            $lineNo++
+            $code = Remove-Comments $line ([ref]$inBlock)
+            if ($code -match $pattern) { $hits += "${f}:${lineNo}: $($line.Trim())" }
+        }
     }
     return $hits
+}
+
+# Rules judge code, not prose: drop // and /* */ comments (including /// docs) before matching.
+# Comment markers inside string literals are not special-cased; rare enough in this codebase.
+function Remove-Comments([string]$line, [ref]$inBlock) {
+    $out = ''
+    $i = 0
+    while ($i -lt $line.Length) {
+        if ($inBlock.Value) {
+            $end = $line.IndexOf('*/', $i)
+            if ($end -lt 0) { return $out }
+            $inBlock.Value = $false
+            $i = $end + 2
+            continue
+        }
+        $lineComment = $line.IndexOf('//', $i)
+        $blockStart = $line.IndexOf('/*', $i)
+        if ($blockStart -ge 0 -and ($lineComment -lt 0 -or $blockStart -lt $lineComment)) {
+            $out += $line.Substring($i, $blockStart - $i)
+            $inBlock.Value = $true
+            $i = $blockStart + 2
+            continue
+        }
+        if ($lineComment -ge 0) { return $out + $line.Substring($i, $lineComment - $i) }
+        return $out + $line.Substring($i)
+    }
+    return $out
 }
 
 # ------------------------------------------------------- R1 scene owners ----
