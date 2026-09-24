@@ -41,3 +41,24 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Background
+    uniqueID: 1100000001
+    locked: 0
+  - name: Walls
+    uniqueID: 1100000002
+    locked: 0
+  - name: Docks
+    uniqueID: 1100000003
+    locked: 0
+  - name: Blocks
+    uniqueID: 1100000004
+    locked: 0
+  - name: Ships
+    uniqueID: 1100000005
+    locked: 0
+  - name: Effects
+    uniqueID: 1100000006
+    locked: 0
+  - name: UI
+    uniqueID: 1100000007
+    locked: 0

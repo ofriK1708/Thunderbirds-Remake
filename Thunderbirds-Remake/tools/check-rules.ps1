@@ -77,18 +77,61 @@ function Get-Matches([string]$glob, [string]$pattern, [string[]]$excludeGlobs) {
     $hits = @()
     foreach ($f in $files) {
         if (-not (Test-Path $f)) { continue }
-        $m = Select-String -Path $f -Pattern $pattern -SimpleMatch:$false -ErrorAction SilentlyContinue
-        foreach ($x in $m) { $hits += "$($x.Path):$($x.LineNumber): $($x.Line.Trim())" }
+        $lineNo = 0
+        $inBlock = $false
+        foreach ($line in Get-Content -LiteralPath $f) {
+            $lineNo++
+            $code = Remove-Comments $line ([ref]$inBlock)
+            if ($code -match $pattern) { $hits += "${f}:${lineNo}: $($line.Trim())" }
+        }
     }
     return $hits
 }
 
+# Rules judge code, not prose: drop // and /* */ comments (including /// docs) before matching.
+# Comment markers inside string literals are not special-cased; rare enough in this codebase.
+function Remove-Comments([string]$line, [ref]$inBlock) {
+    $out = ''
+    $i = 0
+    while ($i -lt $line.Length) {
+        if ($inBlock.Value) {
+            $end = $line.IndexOf('*/', $i)
+            if ($end -lt 0) { return $out }
+            $inBlock.Value = $false
+            $i = $end + 2
+            continue
+        }
+        $lineComment = $line.IndexOf('//', $i)
+        $blockStart = $line.IndexOf('/*', $i)
+        if ($blockStart -ge 0 -and ($lineComment -lt 0 -or $blockStart -lt $lineComment)) {
+            $out += $line.Substring($i, $blockStart - $i)
+            $inBlock.Value = $true
+            $i = $blockStart + 2
+            continue
+        }
+        if ($lineComment -ge 0) { return $out + $line.Substring($i, $lineComment - $i) }
+        return $out + $line.Substring($i)
+    }
+    return $out
+}
+
 # ------------------------------------------------------- R1 scene owners ----
 $sceneOwners = @{ 'Game.unity' = 'ofriK1708'; 'MainMenu.unity' = 'rotem444' }
+function Get-Handle([string]$who) {
+    $who = $who.ToLower()
+    if ($who -match 'rotem') { 'rotem444' } elseif ($who -match 'ofri') { 'ofriK1708' } else { 'unknown' }
+}
 $violations = @()
 foreach ($f in $changed | Where-Object { $_ -like '*.unity' }) {
     $owner = $sceneOwners[[System.IO.Path]::GetFileName($f)]
-    if ($owner -and $Actor -ne 'unknown' -and $owner -ne $Actor) { $violations += "$f (owner: $owner, you: $Actor)" }
+    if (-not $owner) { continue }
+    # Judge each commit by its author (a branch may carry the owner's own commits),
+    # and uncommitted edits by whoever is running the check.
+    $editors = @(git log --format='%an %ae' "$mergeBase..HEAD" -- $f | ForEach-Object { Get-Handle $_ })
+    if (git status --porcelain -- $f) { $editors += $Actor }
+    foreach ($e in $editors | Sort-Object -Unique) {
+        if ($e -ne 'unknown' -and $e -ne $owner) { $violations += "$f (owner: $owner, edited by: $e)" }
+    }
 }
 if ($violations) { Fail 'R1' 'A scene was changed by someone who does not own it' $violations }
 else { Pass 'R1' 'scene ownership respected' }
@@ -117,7 +160,8 @@ if ($hits) { Fail 'R6' 'Singleton outside GameManager / AudioManager' $hits }
 else { Pass 'R6' 'no unexpected singletons' }
 
 # --------------------------------------------------------- R8 meta files ----
-$assets = $tracked | Where-Object { $_ -like "$projPrefix`Assets/*" }
+# Unity ignores dot-files and dot-folders (e.g. .gitkeep) and never gives them a .meta.
+$assets = $tracked | Where-Object { $_ -like "$projPrefix`Assets/*" -and $_ -notmatch '/\.[^/]+(/|$)' }
 $assetSet = [System.Collections.Generic.HashSet[string]]::new()
 foreach ($a in $assets) { [void]$assetSet.Add($a) }
 $missingMeta = @()
