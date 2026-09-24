@@ -4,7 +4,9 @@ namespace Thunderbirds.Rules
 {
     /// <summary>
     /// Tuning values the rules need, as plain C# (R4: the rules layer can't read Unity config assets).
-    /// The Unity layer copies them from the GameConfig / ShipConfig assets (#2). Defaults are the GDD §3 first guesses.
+    /// Tune the game in the Inspector, on the GameConfig / ShipConfig assets (#2): LevelController copies
+    /// those values into a new SimulationConfig on every level start and Restart. The defaults below
+    /// (GDD §3 first guesses) are only used by tests; editing them does not change the game.
     /// </summary>
     public sealed class SimulationConfig
     {
