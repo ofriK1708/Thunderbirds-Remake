@@ -1,0 +1,11 @@
+# Scene ownership (docs/COLLABORATION.md, R1).
+# GitHub auto-requests a review from the owner when a PR touches their file.
+
+**/Game.unity          @ofriK1708
+**/MainMenu.unity      @rotem444
+
+# Shared, but worth a heads-up to both:
+**/ProjectSettings/**  @ofriK1708 @rotem444
+**/.gitattributes      @ofriK1708 @rotem444
+**/.gitignore          @ofriK1708 @rotem444
+/docs/GDD.md           @ofriK1708 @rotem444
