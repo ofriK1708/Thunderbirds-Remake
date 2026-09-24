@@ -372,6 +372,7 @@ graph TD
 - **Events say what changed; `State` says what is.** Shapes, weights and colour classes are read from `State`. Timed events (`ShipMoved`, `BlockMoved`, `BlockFell`) carry `stepSeconds` so the slide lasts exactly as long as the rule. `OxygenChanged` is raised only when the whole second changes.
 - **Conventions:** `GridPos(x, y)` with y = 0 at the bottom row; a ship's or block's position is its bottom-left cell.
 - **`FakeSimulation`** replays a scripted `FakeScript` (`.At(seconds, event)`) through the same `EventHub`, so views are built and tuned before the rules exist.
+- **Config:** the rules read a plain-C# `SimulationConfig`, never the ScriptableObjects (R4). `LevelController` builds it from `GameConfig` / `ShipConfig`, and `Simulation` re-reads it on every `Restart`, so values tuned in the Inspector apply on the next Restart without leaving Play mode.
 
 A full input → tick → events → views trace of one move is in [`move-flow.md`](move-flow.md).
 
@@ -444,3 +445,4 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 | v0.1 | 2026-09-14 | Initial draft: concept, rules, controls, screens, art, architecture and scope agreed in design session |
 | v0.1.1 | 2026-09-24 | §7: rationale for text-based levels; one-move sequence diagram added in [`move-flow.md`](move-flow.md) |
 | v0.1.2 | 2026-09-24 | §7: simulation contract agreed in pair session (#3) — `SetHeldDirection` replaces `TryMove`, events queued and flushed after each tick, event arguments, grid conventions, `FakeSimulation` |
+| v0.1.3 | 2026-09-24 | §7: `Simulation` skeleton with the fixed tick order; tuning config re-read on every Restart (live Inspector tuning) |

@@ -9,7 +9,8 @@ namespace Thunderbirds.Rules
     public sealed class Simulation : ISimulation
     {
         private readonly Func<SimulationState> _buildState;
-        private readonly SimulationConfig _config;
+        private readonly Func<SimulationConfig> _buildConfig;
+        private SimulationConfig _config;
         private readonly EventHub _events = new EventHub();
 
         private SimulationState _state;
@@ -26,12 +27,32 @@ namespace Thunderbirds.Rules
         /// Builds the starting state; called on construction and on every Restart.
         /// Will come from LevelDefinition once the parser (#4) exists.
         /// </param>
-        public Simulation(Func<SimulationState> buildState, SimulationConfig config)
+        /// <param name="buildConfig">
+        /// Reads the tuning values; called on construction and on every Restart, so Inspector edits to
+        /// the GameConfig / ShipConfig assets apply on the next Restart without leaving Play mode.
+        /// </param>
+        public Simulation(Func<SimulationState> buildState, Func<SimulationConfig> buildConfig)
         {
             _buildState = buildState ?? throw new ArgumentNullException(nameof(buildState));
-            _config = config ?? throw new ArgumentNullException(nameof(config));
-            _config.Validate();
+            _buildConfig = buildConfig ?? throw new ArgumentNullException(nameof(buildConfig));
+            _config = LoadConfig();
             _state = _buildState();
+        }
+
+        /// <summary>Fixed config (tests); Restart keeps the same values.</summary>
+        public Simulation(Func<SimulationState> buildState, SimulationConfig config)
+            : this(buildState, () => config)
+        {
+        }
+
+        /// <summary>The tuning values in use since the last start or Restart.</summary>
+        internal SimulationConfig Config => _config;
+
+        private SimulationConfig LoadConfig()
+        {
+            var config = _buildConfig() ?? throw new InvalidOperationException("buildConfig returned null");
+            config.Validate();
+            return config;
         }
 
         public void Tick(float dt)
@@ -77,6 +98,7 @@ namespace Thunderbirds.Rules
 
         public void Restart()
         {
+            _config = LoadConfig(); // live tuning: pick up Inspector edits
             _state = _buildState();
             _heldDirection = null;
             _pressedSinceLastStep = null;

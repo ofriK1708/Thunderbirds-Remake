@@ -80,6 +80,35 @@ namespace Thunderbirds.Tests.EditMode
         }
 
         [Test]
+        public void Restart_ReloadsConfig_SoInspectorEditsApply()
+        {
+            var tuned = new SimulationConfig();
+            var sim = new Simulation(TestStates.SmallRoom, () => new SimulationConfig
+            {
+                AtlasMoveStepSeconds = tuned.AtlasMoveStepSeconds
+            });
+            Assert.AreEqual(0.16f, sim.Config.AtlasMoveStepSeconds, 1e-6f);
+
+            tuned.AtlasMoveStepSeconds = 0.2f; // "edited in the Inspector" mid-level
+            Assert.AreEqual(0.16f, sim.Config.AtlasMoveStepSeconds, 1e-6f, "no change until Restart");
+
+            sim.Restart();
+
+            Assert.AreEqual(0.2f, sim.Config.AtlasMoveStepSeconds, 1e-6f);
+        }
+
+        [Test]
+        public void Restart_WithInvalidConfig_Throws()
+        {
+            var step = 0.16f;
+            var sim = new Simulation(TestStates.SmallRoom, () => new SimulationConfig { AtlasMoveStepSeconds = step });
+
+            step = 0f;
+
+            Assert.Throws<System.ArgumentException>(() => sim.Restart());
+        }
+
+        [Test]
         public void Restart_RebuildsState_AndClearsLog()
         {
             var sim = NewSim();
