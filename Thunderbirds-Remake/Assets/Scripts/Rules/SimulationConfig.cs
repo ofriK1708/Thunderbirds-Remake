@@ -3,8 +3,8 @@ using System;
 namespace Thunderbirds.Rules
 {
     /// <summary>
-    /// Tuning values the rules need, as plain C# (R4: the rules layer can't read ScriptableObjects).
-    /// The Unity layer copies them from GameConfig / ShipConfig (#2). Defaults are the GDD §3 first guesses.
+    /// Tuning values the rules need, as plain C# (R4: the rules layer can't read Unity config assets).
+    /// The Unity layer copies them from the GameConfig / ShipConfig assets (#2). Defaults are the GDD §3 first guesses.
     /// </summary>
     public sealed class SimulationConfig
     {
