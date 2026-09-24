@@ -85,10 +85,21 @@ function Get-Matches([string]$glob, [string]$pattern, [string[]]$excludeGlobs) {
 
 # ------------------------------------------------------- R1 scene owners ----
 $sceneOwners = @{ 'Game.unity' = 'ofriK1708'; 'MainMenu.unity' = 'rotem444' }
+function Get-Handle([string]$who) {
+    $who = $who.ToLower()
+    if ($who -match 'rotem') { 'rotem444' } elseif ($who -match 'ofri') { 'ofriK1708' } else { 'unknown' }
+}
 $violations = @()
 foreach ($f in $changed | Where-Object { $_ -like '*.unity' }) {
     $owner = $sceneOwners[[System.IO.Path]::GetFileName($f)]
-    if ($owner -and $Actor -ne 'unknown' -and $owner -ne $Actor) { $violations += "$f (owner: $owner, you: $Actor)" }
+    if (-not $owner) { continue }
+    # Judge each commit by its author (a branch may carry the owner's own commits),
+    # and uncommitted edits by whoever is running the check.
+    $editors = @(git log --format='%an %ae' "$mergeBase..HEAD" -- $f | ForEach-Object { Get-Handle $_ })
+    if (git status --porcelain -- $f) { $editors += $Actor }
+    foreach ($e in $editors | Sort-Object -Unique) {
+        if ($e -ne 'unknown' -and $e -ne $owner) { $violations += "$f (owner: $owner, edited by: $e)" }
+    }
 }
 if ($violations) { Fail 'R1' 'A scene was changed by someone who does not own it' $violations }
 else { Pass 'R1' 'scene ownership respected' }
@@ -117,7 +128,8 @@ if ($hits) { Fail 'R6' 'Singleton outside GameManager / AudioManager' $hits }
 else { Pass 'R6' 'no unexpected singletons' }
 
 # --------------------------------------------------------- R8 meta files ----
-$assets = $tracked | Where-Object { $_ -like "$projPrefix`Assets/*" }
+# Unity ignores dot-files and dot-folders (e.g. .gitkeep) and never gives them a .meta.
+$assets = $tracked | Where-Object { $_ -like "$projPrefix`Assets/*" -and $_ -notmatch '/\.[^/]+(/|$)' }
 $assetSet = [System.Collections.Generic.HashSet[string]]::new()
 foreach ($a in $assets) { [void]$assetSet.Add($a) }
 $missingMeta = @()
