@@ -3,6 +3,7 @@
     "rootNamespace": "Thunderbirds.Tests.EditMode",
     "references": [
         "Thunderbirds.Rules",
+        "Thunderbirds.Unity",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
