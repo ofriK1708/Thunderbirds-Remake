@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7068da2666b774895e667adba0e51d, type: 3}
+  m_Name: L0_Sandbox
+  m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.LevelData
+  displayName: Sandbox (GDD example)
+  grid: '################################
+
+    #..............................#
+
+    #..........................cccc#
+
+    #......bbb.................cccc#
+
+    #KK....b...................AAAA#
+
+    #KK...######...............AAAA#
+
+    #11...#....#............dd.2222#
+
+    #11...#....#............d..2222#
+
+    ################################'
+  timeLimitSeconds: 0
+  hintText: "Sandbox: the GDD \xA77 example level. Not part of the catalog."
