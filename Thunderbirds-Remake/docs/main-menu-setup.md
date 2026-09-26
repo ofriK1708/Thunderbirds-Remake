@@ -5,8 +5,11 @@
 3. Enter Play mode. Quit stops Play mode in the Editor and exits in a standalone build.
 
 The prefab contains an editable Canvas, background, Orbitron title and four buttons.
-How to Play is enabled and opens the connected instructions panel. Play and Options remain
-disabled until their screens are implemented.
+How to Play and Options are enabled and open their connected panels. Play remains disabled.
+Options contains Fullscreen, Music Volume, Sound Effects and Push Preview controls. These
+are interactive visual previews only: they do not apply or save settings. Back or Cancel
+returns to the caller. Existing scene instances inherit the panel from MainMenu.prefab;
+no extra scene object or manual button wiring is required.
 When adding each screen, enable its button and connect the corresponding event on MainMenuView
 in the Inspector. The runtime creates an Input System EventSystem only if none exists.
 

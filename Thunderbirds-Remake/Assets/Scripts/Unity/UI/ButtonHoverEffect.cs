@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 namespace Thunderbirds.Unity
 {
-    /// <summary>Pointer feedback that remains visible on a keyboard-selected button.</summary>
+    /// <summary>Pointer-only highlighting, independent of the EventSystem's selected button.</summary>
     [RequireComponent(typeof(Button))]
     public sealed class ButtonHoverEffect : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
     {
@@ -19,6 +19,9 @@ namespace Thunderbirds.Unity
         {
             button = GetComponent<Button>();
             originalColors = button.colors;
+            // Keep navigation focus without displaying it as a pointer hover.
+            originalColors.selectedColor = originalColors.normalColor;
+            button.colors = originalColors;
             handCursor = CreateHandCursor();
         }
 

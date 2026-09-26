@@ -34,7 +34,7 @@ namespace Thunderbirds.Editor
             Text(content, "Title", "OPTIONS", 49, 0, 410, 1300, 75, Gold);
             Text(content, "Subtitle", "Make the rescue your own.", 23, 0, 337, 1300, 50, Paper);
             var view = root.GetComponent<OptionsView>();
-            var fullscreen = ToggleRow(content, "Fullscreen", 210, true);
+            var fullscreen = ToggleRow(content, "Full Screen", 210, true);
             var music = SliderRow(content, "Music Volume", 65, out var musicValue);
             var effects = SliderRow(content, "Sound Effects", -80, out var effectsValue);
             var preview = ToggleRow(content, "Push Preview", -225, false);

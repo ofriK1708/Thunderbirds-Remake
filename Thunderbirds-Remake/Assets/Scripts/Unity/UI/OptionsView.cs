@@ -19,6 +19,14 @@ namespace Thunderbirds.Unity
         private GameObject caller;
         private GameObject previousSelection;
 
+        private void Awake()
+        {
+            if (fullscreen.GetComponent<CheckboxHoverEffect>() == null)
+                fullscreen.gameObject.AddComponent<CheckboxHoverEffect>();
+            if (pushPreview.GetComponent<CheckboxHoverEffect>() == null)
+                pushPreview.gameObject.AddComponent<CheckboxHoverEffect>();
+        }
+
         public void Open(GameObject from)
         {
             if (gameObject.activeSelf) return;
