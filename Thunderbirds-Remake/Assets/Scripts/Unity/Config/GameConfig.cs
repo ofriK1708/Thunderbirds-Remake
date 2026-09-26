@@ -27,6 +27,9 @@ namespace Thunderbirds.Unity
         [Tooltip("Time to save a stressed ship before it is crushed.")]
         [Min(0.1f)] public float crushGraceSeconds = 3f;
 
+        [Tooltip("Keep pushing into a refused move this long and a hint pops up (e.g. \"too heavy\").")]
+        [Min(0.5f)] public float refusalHintSeconds = 5f;
+
         [Header("Level")]
         [Min(1)] public int livesPerLevel = 3;
 
@@ -63,6 +66,7 @@ namespace Thunderbirds.Unity
                 KestrelSpeedRatio = kestrelSpeedRatio,
                 FallStepSeconds = fallStepSeconds,
                 CrushGraceSeconds = crushGraceSeconds,
+                RefusalHintSeconds = refusalHintSeconds,
                 KestrelPushCapacity = kestrel.pushCapacity,
                 KestrelLoadCapacity = kestrel.loadCapacity,
                 AtlasPushCapacity = atlas.pushCapacity,

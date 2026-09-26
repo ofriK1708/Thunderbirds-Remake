@@ -26,6 +26,10 @@ namespace Thunderbirds.Rules
         }
     }
 
+    /// <summary>
+    /// The ship bumps and the chain flashes <see cref="ChainColour"/>. Raised on the first refusal of a hold;
+    /// while the direction stays held the ship retries silently (see <see cref="RefusalHint"/>).
+    /// </summary>
     public sealed class MoveRefused : SimEvent
     {
         public readonly ShipId Ship;
@@ -33,7 +37,32 @@ namespace Thunderbirds.Rules
         public readonly RefuseReason Reason;
         public readonly IReadOnlyList<BlockId> Chain;
 
-        public MoveRefused(ShipId ship, Direction direction, RefuseReason reason, IReadOnlyList<BlockId> chain)
+        /// <summary>Colour class of the chain's total weight: red when no ship could push it.</summary>
+        public readonly ColourClass ChainColour;
+
+        public MoveRefused(ShipId ship, Direction direction, RefuseReason reason, IReadOnlyList<BlockId> chain,
+            ColourClass chainColour)
+        {
+            Ship = ship;
+            Direction = direction;
+            Reason = reason;
+            Chain = chain ?? new BlockId[0];
+            ChainColour = chainColour;
+        }
+    }
+
+    /// <summary>
+    /// The player has kept pushing into a refused move for refusalHintSeconds. Raised once per hold;
+    /// the HUD turns it into a hint popup (e.g. "Too heavy for Kestrel").
+    /// </summary>
+    public sealed class RefusalHint : SimEvent
+    {
+        public readonly ShipId Ship;
+        public readonly Direction Direction;
+        public readonly RefuseReason Reason;
+        public readonly IReadOnlyList<BlockId> Chain;
+
+        public RefusalHint(ShipId ship, Direction direction, RefuseReason reason, IReadOnlyList<BlockId> chain)
         {
             Ship = ship;
             Direction = direction;
