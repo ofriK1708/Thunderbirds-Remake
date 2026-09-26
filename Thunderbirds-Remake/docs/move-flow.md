@@ -93,8 +93,9 @@ sequenceDiagram
 ## Branches of the same flow
 
 **Refused push** — if `d` weighed 5, `MoveResolver` changes nothing in the grid and the Simulation raises
-`MoveRefused(kestrel, Right, chain)`: `ShipView` plays a bump, each `BlockView` in the chain flashes its
-colour class.
+`MoveRefused(kestrel, Right, TooHeavy, chain, Yellow)`: `ShipView` plays a bump, each `BlockView` in the chain
+flashes the chain's colour class. Holding → keeps retrying silently; after `refusalHintSeconds` the Simulation
+raises `RefusalHint` and the HUD shows a hint.
 
 **Pushed off a ledge** — the push succeeds this tick. On the next tick, gravity (step 1) finds
 `SupportsOf(d)` empty and starts its fall timer. Every `fallStepSeconds` it raises `BlockFell` (the view
@@ -122,5 +123,7 @@ Questions 1–4 were decided in the #3 pair session (see the issue comment and G
 3. ~~**Sub-frame taps**~~ — **latched in the Simulation, not `InputReader`**: pressing a direction sets a
    "pressed since last step" flag that the next step consumes, even if the key was already released.
 4. ~~**`ShipMoved` payload**~~ — **carries `stepSeconds`**; views never read ship speed from config.
-5. **Refused move and cooldown** *(still open — decide in #7)* — does a bump start a cooldown? Decides whether holding → against a wall
+5. ~~**Refused move and cooldown**~~ — **decided in #7:** a refusal uses up the step like a move, but only the
+   first refusal of a hold raises `MoveRefused` (one bump); later retries are silent and succeed if the obstacle
+   clears. After `refusalHintSeconds` of pushing, `RefusalHint` is raised once. Original question: — does a bump start a cooldown? Decides whether holding → against a wall
    bumps once or repeatedly.

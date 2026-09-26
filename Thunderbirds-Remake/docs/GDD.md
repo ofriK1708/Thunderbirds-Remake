@@ -83,7 +83,8 @@ stateDiagram-v2
 - A block is **supported if any of its bottom cells rests on something** (wall, block or ship). An unsupported block falls one cell per `fallStepSeconds`, taking whatever rests only on it along.
 
 **Push** — moving sideways into blocks in front of the ship
-- The chain is every block that would be displaced, plus everything riding on those blocks. If the chain's full weight > the ship's `pushCapacity`, or the front of the chain is blocked, the move is **refused**: the ship bumps and the chain flashes its colour class.
+- The chain is every block that would be displaced, plus everything riding on those blocks. If the chain's full weight > the ship's `pushCapacity`, or the front of the chain is blocked, the move is **refused**: the ship bumps and the chain flashes its colour class. A block resting only *under* the chain is not part of it. When both apply, *blocked* is reported before *too heavy*.
+- **Holding into a refusal** bumps **once**; while the direction stays held the ship retries silently every step, so it moves on by itself if the obstacle clears. Releasing and pressing again bumps again. After `refusalHintSeconds` of pushing into the same refusal, a hint pops up once (e.g. "Too heavy for Kestrel — try Atlas").
 
 **Lift** — moving up with blocks on the roof
 - Lift weight is **everything that would rise, at full weight — even if part of it also rests on a ledge**. If lift weight > `loadCapacity`, or the top of the stack would hit a ceiling, the move is **refused** (bump + flash). A refused lift is never fatal.
@@ -139,6 +140,7 @@ stateDiagram-v2
 | `pushCapacity` | `ShipConfig` (Kestrel / Atlas) | Max chain weight the ship can push — also sets the colour thresholds | 4 / 8 |
 | `loadCapacity` | `ShipConfig` (Kestrel / Atlas) | Max weight the ship can lift and carry before being stressed | 4 / 8 |
 | `crushGraceSeconds` | `GameConfig` | Time to save a stressed ship — **verify first** that a switch-ships-and-push rescue fits | 3.0 |
+| `refusalHintSeconds` | `GameConfig` | How long the player pushes into a refused move before the hint popup | 5.0 |
 | `livesPerLevel` | `GameConfig` | Crushes allowed before the level fails | 3 |
 | `defaultTimeLimitSeconds` | `GameConfig` | Oxygen when a level doesn't set its own | 90 |
 | `timeLimitSeconds` | `LevelData` | Oxygen for this level (0 = use default) | per level |
@@ -365,7 +367,7 @@ graph TD
 | `1` / `2` | Kestrel dock (2 × 2) / Atlas dock (4 × 2) | exactly one each, exact size |
 | `a`–`z` | a block — all cells with the same letter form one block | connected shape; weight ≤ Atlas `pushCapacity` (no authored red blocks) |
 
-**Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`. Their argument types are in `Assets/Scripts/Rules/Contract/SimEvents.cs`; the decisions behind them are recorded on issue #3.
+**Simulation events — the contract between the layers:** `ShipMoved`, `MoveRefused`, `BlockMoved`, `BlockFell`, `BlockLanded`, `BlockReleased`, `ShipStressed`, `ShipRelieved`, `ShipCrushed`, `ShipRespawned`, `ActiveShipChanged`, `OxygenChanged`, `LevelComplete`, `LevelFailed(reason)`, `RefusalHint`. `MoveRefused` also carries the chain's colour class. Their argument types are in `Assets/Scripts/Rules/Contract/SimEvents.cs`; the decisions behind them are recorded on issue #3.
 
 - **Interface:** `ISimulation` exposes `State` (read-only), `Events`, `Tick(dt)`, `SetHeldDirection(Direction?)`, `SwitchShip()`, `Restart()`. Input reports the *held* direction only; the simulation decides when the active ship steps (the step timer is a rule because it decides races with falling blocks), and a tap shorter than one step still produces one step.
 - **Delivery:** every event goes through one `EventHub`: it is appended to `Events.Log` at once, and listeners are notified in order **after the whole tick** (step 8), so views never see a half-updated grid. Tests assert on the log; views subscribe to typed C# events.
@@ -446,3 +448,4 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 | v0.1.1 | 2026-09-24 | §7: rationale for text-based levels; one-move sequence diagram added in [`move-flow.md`](move-flow.md) |
 | v0.1.2 | 2026-09-24 | §7: simulation contract agreed in pair session (#3) — `SetHeldDirection` replaces `TryMove`, events queued and flushed after each tick, event arguments, grid conventions, `FakeSimulation` |
 | v0.1.3 | 2026-09-24 | §7: `Simulation` skeleton with the fixed tick order; tuning config re-read on every Restart (live Inspector tuning) |
+| v0.1.4 | 2026-09-26 | §3 Push: holding into a refusal bumps once and retries silently; `refusalHintSeconds` hint popup; blocked reported before too heavy. §7: `RefusalHint` event, `MoveRefused` carries the chain colour (#7) |
