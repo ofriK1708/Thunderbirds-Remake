@@ -12,7 +12,7 @@ namespace Thunderbirds.Tests.EditMode
         private static SimEvent[] OneOfEach() => new SimEvent[]
         {
             new ShipMoved(ShipId.Atlas, new GridPos(1, 1), new GridPos(2, 1), 0.16f),
-            new MoveRefused(ShipId.Kestrel, Direction.Right, RefuseReason.TooHeavy, new[] { B }),
+            new MoveRefused(ShipId.Kestrel, Direction.Right, RefuseReason.TooHeavy, new[] { B }, ColourClass.Yellow),
             new BlockMoved(B, new GridPos(3, 1), new GridPos(4, 1), 0.16f),
             new BlockFell(B, new GridPos(4, 2), new GridPos(4, 1), 0.1f),
             new BlockLanded(B),
