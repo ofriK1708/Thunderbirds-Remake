@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e84b959971b6b904cbe2cb73a41f8fb6, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.GameConfig
+  kestrel: {fileID: 11400000, guid: a832efc0ab01bf54586ce04590f251ae, type: 2}
+  atlas: {fileID: 11400000, guid: 4b0d651d6d007a549a5b9e5d2a306768, type: 2}
+  atlasMoveStepSeconds: 0.16
+  kestrelSpeedRatio: 2
+  fallStepSeconds: 0.1
+  crushGraceSeconds: 3
+  livesPerLevel: 3
+  defaultTimeLimitSeconds: 90
+  restartHoldSeconds: 0.5
+  switchHighlightSeconds: 1.5
+  shipTiltDegrees: 8
+  hoverBobAmplitude: 0.05
+  showPushPreview: 0
+  tombVoid: {r: 0.0627451, g: 0.0627451, b: 0.0627451, a: 1}
+  sandstone: {r: 0.8784314, g: 0.627451, b: 0.2509804, a: 1}
+  sandShadow: {r: 0.47058824, g: 0.34509805, b: 0.15686275, a: 1}
+  blockTeal: {r: 0, g: 0.5019608, b: 0.5019608, a: 1}
+  blockYellow: {r: 1, g: 1, b: 0.2509804, a: 1}
+  blockRed: {r: 0.8784314, g: 0.2509804, b: 0.2509804, a: 1}
+  dockLit: {r: 0.2509804, g: 0.8784314, b: 0.2509804, a: 1}
+  uiMuted: {r: 0.53333336, g: 0.53333336, b: 0.53333336, a: 1}
+  uiText: {r: 1, g: 1, b: 0.9254902, a: 1}
