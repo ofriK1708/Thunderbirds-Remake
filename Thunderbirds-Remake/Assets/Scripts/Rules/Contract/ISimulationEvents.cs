@@ -11,6 +11,7 @@ namespace Thunderbirds.Rules
 
         event Action<ShipMoved> ShipMoved;
         event Action<MoveRefused> MoveRefused;
+        event Action<RefusalHint> RefusalHint;
         event Action<BlockMoved> BlockMoved;
         event Action<BlockFell> BlockFell;
         event Action<BlockLanded> BlockLanded;

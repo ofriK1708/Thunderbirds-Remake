@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace Thunderbirds.Rules
 {
@@ -19,6 +20,15 @@ namespace Thunderbirds.Rules
         // than one step still produces one step. Consumed by the ship-move step.
         private Direction? _heldDirection;
         private Direction? _pressedSinceLastStep;
+
+        // Ship stepping (#7). Seconds until the active ship may step; <= 0 means ready.
+        private float _stepTimer;
+
+        // Refusal feedback (#7, move-flow.md Q5): bump once per hold, retry silently while held,
+        // and raise RefusalHint once after RefusalHintSeconds of pushing into the refusal.
+        private Direction? _refusedDirection;
+        private float _refusedSeconds;
+        private bool _hintRaised;
 
         public IReadOnlySimulationState State => _state;
         public ISimulationEvents Events => _events;
@@ -92,6 +102,7 @@ namespace Thunderbirds.Rules
             if (_state.GetShip(other).IsGhost) return; // a ghost is not selectable (GDD §3)
 
             _state.ActiveShip = other;
+            ForgetRefusal();
             _events.Raise(new ActiveShipChanged(other, automatic: false));
             _events.Flush();
         }
@@ -102,6 +113,8 @@ namespace Thunderbirds.Rules
             _state = _buildState();
             _heldDirection = null;
             _pressedSinceLastStep = null;
+            _stepTimer = 0f;
+            ForgetRefusal();
             _events.Clear();
         }
 
@@ -117,10 +130,62 @@ namespace Thunderbirds.Rules
         /// <summary>2. The active ship steps in the held/latched direction. Issue #7.</summary>
         private void MoveActiveShip(float dt)
         {
-            // TODO(#7): per-ship step accumulator (timer -= _config.StepSeconds(ship), never = 0);
-            // direction = NextStepDirection; after stepping, set _pressedSinceLastStep = null.
-            // Push / lift / carry / release via MoveResolver; raise ShipMoved, BlockMoved,
-            // BlockReleased or MoveRefused.
+            _stepTimer -= dt;
+            var dir = NextStepDirection;
+            if (dir == null)
+            {
+                if (_stepTimer < 0f) _stepTimer = 0f; // no banking steps while idle
+                ForgetRefusal();
+                return;
+            }
+
+            if (_refusedDirection.HasValue && _refusedDirection != dir) ForgetRefusal(); // a new push
+            if (_refusedDirection.HasValue) _refusedSeconds += dt;
+
+            if (_stepTimer > 0f) return;
+
+            var shipId = _state.ActiveShip;
+            var stepSeconds = _config.StepSeconds(shipId);
+            _stepTimer += stepSeconds; // accumulator, not "= stepSeconds": speed stays frame-rate independent
+            _pressedSinceLastStep = null;
+
+            var from = _state.GetShip(shipId).Position;
+            var result = MoveResolver.TryMove(_state, shipId, dir.Value, _config);
+            if (result.Accepted)
+            {
+                ForgetRefusal();
+                _events.Raise(new ShipMoved(shipId, from, _state.GetShip(shipId).Position, stepSeconds));
+                var offset = dir.Value.ToOffset();
+                foreach (var block in result.Chain)
+                    _events.Raise(new BlockMoved(block.Id, block.Position - offset, block.Position, stepSeconds));
+                return;
+            }
+
+            if (!_refusedDirection.HasValue)
+            {
+                _refusedDirection = dir;
+                _events.Raise(new MoveRefused(shipId, dir.Value, result.Reason, IdsOf(result.Chain),
+                    LevelDefinition.ColourOf(result.ChainWeight, _config)));
+            }
+            else if (!_hintRaised && _refusedSeconds >= _config.RefusalHintSeconds)
+            {
+                _hintRaised = true;
+                _events.Raise(new RefusalHint(shipId, dir.Value, result.Reason, IdsOf(result.Chain)));
+            }
+        }
+
+        private void ForgetRefusal()
+        {
+            _refusedDirection = null;
+            _refusedSeconds = 0f;
+            _hintRaised = false;
+        }
+
+        private static BlockId[] IdsOf(IReadOnlyList<BlockState> blocks)
+        {
+            var ids = new BlockId[blocks.Count];
+            for (var i = 0; i < ids.Length; i++) ids[i] = blocks[i].Id;
+            return ids;
         }
 
         /// <summary>3. Each block's CarriedBy from its supports. Issue #12.</summary>
