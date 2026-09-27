@@ -15,6 +15,9 @@ namespace Thunderbirds.Rules
         public float FallStepSeconds = 0.10f;
         public float CrushGraceSeconds = 3f;
 
+        /// <summary>Keep pushing into a refused move this long and the simulation raises RefusalHint.</summary>
+        public float RefusalHintSeconds = 5f;
+
         public int KestrelPushCapacity = 4;
         public int AtlasPushCapacity = 8;
         public int KestrelLoadCapacity = 4;
