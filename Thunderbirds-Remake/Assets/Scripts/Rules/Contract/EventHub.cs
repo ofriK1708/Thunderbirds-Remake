@@ -17,6 +17,7 @@ namespace Thunderbirds.Rules
 
         public event Action<ShipMoved> ShipMoved;
         public event Action<MoveRefused> MoveRefused;
+        public event Action<RefusalHint> RefusalHint;
         public event Action<BlockMoved> BlockMoved;
         public event Action<BlockFell> BlockFell;
         public event Action<BlockLanded> BlockLanded;
@@ -56,6 +57,7 @@ namespace Thunderbirds.Rules
             {
                 case ShipMoved x: ShipMoved?.Invoke(x); break;
                 case MoveRefused x: MoveRefused?.Invoke(x); break;
+                case RefusalHint x: RefusalHint?.Invoke(x); break;
                 case BlockMoved x: BlockMoved?.Invoke(x); break;
                 case BlockFell x: BlockFell?.Invoke(x); break;
                 case BlockLanded x: BlockLanded?.Invoke(x); break;
