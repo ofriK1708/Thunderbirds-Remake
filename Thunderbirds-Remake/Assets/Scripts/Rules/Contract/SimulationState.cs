@@ -17,6 +17,7 @@ namespace Thunderbirds.Rules
         public int Height { get; }
         public IReadOnlyList<ShipState> Ships => _ships;
         public IReadOnlyList<BlockState> Blocks => _blocks;
+        public GridModel Grid { get; }
 
         public ShipId ActiveShip { get; internal set; }
         public int LivesLeft { get; internal set; }
@@ -38,6 +39,7 @@ namespace Thunderbirds.Rules
             OxygenRemaining = oxygenSeconds;
             ActiveShip = activeShip;
             Status = SimStatus.Playing;
+            Grid = new GridModel(this);
         }
 
         public bool IsWall(GridPos p)

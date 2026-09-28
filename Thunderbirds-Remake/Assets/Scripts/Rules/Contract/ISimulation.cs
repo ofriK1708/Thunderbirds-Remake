@@ -18,6 +18,9 @@ namespace Thunderbirds.Rules
         /// </summary>
         void SetHeldDirection(Direction? direction);
 
+        /// <summary>Discard held input and pending taps when gameplay input is suspended.</summary>
+        void ClearInput();
+
         void SwitchShip();
 
         /// <summary>Full reset: rebuild from the level definition, lives and oxygen refilled, log cleared.</summary>

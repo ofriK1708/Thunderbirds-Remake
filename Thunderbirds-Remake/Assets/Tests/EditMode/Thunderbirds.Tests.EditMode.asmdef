@@ -4,6 +4,8 @@
     "references": [
         "Thunderbirds.Rules",
         "Thunderbirds.Unity",
+        "Unity.InputSystem",
+        "UnityEngine.UI",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

@@ -62,6 +62,8 @@ namespace Thunderbirds.Rules
             _events.Flush();
         }
 
+        public void ClearInput() => HeldDirection = null;
+
         public void Restart()
         {
             _state = _buildState();

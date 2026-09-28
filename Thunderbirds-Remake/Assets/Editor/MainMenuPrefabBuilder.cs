@@ -83,7 +83,7 @@ namespace Thunderbirds.Editor
             var line = Rect("Title underline", frame, new Vector2(0, 91), new Vector2(90, 3));
             line.gameObject.AddComponent<Image>().color = Gold;
 
-            var play = Button(frame, "Play", 12, false);
+            var play = Button(frame, "Play", 12, true);
             var how = Button(frame, "How to Play", -82, false);
             var options = Button(frame, "Options", -176, false);
             var quit = Button(frame, "Quit", -270, true);

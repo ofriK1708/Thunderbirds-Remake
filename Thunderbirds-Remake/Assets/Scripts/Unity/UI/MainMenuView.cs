@@ -1,7 +1,9 @@
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Thunderbirds.Unity
@@ -20,6 +22,7 @@ namespace Thunderbirds.Unity
         [SerializeField] private UnityEvent onOptions = new UnityEvent();
 
         private GameObject ownedEventSystem;
+        private InputReader menuInput;
 
         private void Awake()
         {
@@ -28,8 +31,11 @@ namespace Thunderbirds.Unity
             {
                 ownedEventSystem = new GameObject("Menu EventSystem",
                     typeof(EventSystem), typeof(InputSystemUIInputModule));
+                menuInput = new InputReader(InputSystem.actions);
+                menuInput.ConfigureUI(ownedEventSystem.GetComponent<InputSystemUIInputModule>());
             }
-            playButton.onClick.AddListener(onPlay.Invoke);
+            playButton.interactable = true;
+            playButton.onClick.AddListener(Play);
             howToPlayButton.onClick.AddListener(onHowToPlay.Invoke);
             howToPlayButton.onClick.AddListener(ShowHowToPlay);
             optionsButton.onClick.AddListener(onOptions.Invoke);
@@ -56,6 +62,13 @@ namespace Thunderbirds.Unity
             if (optionsPanel != null) optionsPanel.Open(content.gameObject);
         }
 
+        private void Play()
+        {
+            // Keep an explicitly wired production flow; otherwise open the playable sandbox.
+            if (onPlay.GetPersistentEventCount() > 0) onPlay.Invoke();
+            else SceneManager.LoadScene("Game");
+        }
+
         private void OnRectTransformDimensionsChange() => FitContent();
 
         private void FitContent()
@@ -68,13 +81,14 @@ namespace Thunderbirds.Unity
 
         private void OnDestroy()
         {
-            playButton.onClick.RemoveListener(onPlay.Invoke);
+            playButton.onClick.RemoveListener(Play);
             howToPlayButton.onClick.RemoveListener(onHowToPlay.Invoke);
             howToPlayButton.onClick.RemoveListener(ShowHowToPlay);
             optionsButton.onClick.RemoveListener(onOptions.Invoke);
             optionsButton.onClick.RemoveListener(ShowOptions);
             quitButton.onClick.RemoveListener(Quit);
             if (ownedEventSystem != null) Destroy(ownedEventSystem);
+            menuInput?.Dispose();
         }
 
         private void Quit()
