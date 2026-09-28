@@ -1,0 +1,12 @@
+{
+    "name": "Thunderbirds.Tests.PlayMode",
+    "rootNamespace": "Thunderbirds.Tests.PlayMode",
+    "references": ["Thunderbirds.Rules", "Thunderbirds.Unity", "Unity.InputSystem", "Unity.InputSystem.TestFramework", "UnityEngine.TestRunner"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "overrideReferences": true,
+    "precompiledReferences": ["nunit.framework.dll"],
+    "autoReferenced": false,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "noEngineReferences": false
+}

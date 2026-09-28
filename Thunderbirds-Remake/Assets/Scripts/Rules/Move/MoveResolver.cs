@@ -27,10 +27,11 @@ namespace Thunderbirds.Rules
     /// </summary>
     internal static class MoveResolver
     {
-        public static MoveResult TryMove(SimulationState state, ShipId shipId, Direction dir, SimulationConfig config)
+        public static MoveResult TryMove(SimulationState state, ShipId shipId, Direction dir, SimulationConfig config,
+            ISet<GridPos> fallenCells = null)
         {
             var ship = state.GetShip(shipId);
-            var grid = new CellOccupancy(state);
+            var grid = state.Grid;
             var step = dir.ToOffset();
 
             var sideways = dir == Direction.Left || dir == Direction.Right;
@@ -40,8 +41,12 @@ namespace Thunderbirds.Rules
 
             // Everything that moves must land on a cell that is free or is itself moving away.
             var moving = new HashSet<BlockState>(chain);
-            var movers = CellOccupancy.CellsOf(ship);
-            foreach (var block in chain) movers.AddRange(CellOccupancy.CellsOf(block));
+            var movers = GridModel.CellsOf(ship);
+            // A fresh fall wins this tick, even when the ship could normally push that block away.
+            if (fallenCells != null)
+                foreach (var cell in movers)
+                    if (fallenCells.Contains(cell + step)) return Refused(RefuseReason.FallWonTie, chain, weight);
+            foreach (var block in chain) movers.AddRange(GridModel.CellsOf(block));
             foreach (var cell in movers)
             {
                 var next = cell + step;
@@ -68,14 +73,14 @@ namespace Thunderbirds.Rules
         /// Walls and ships are ignored here; TryMove checks the chain's front afterwards.
         /// </summary>
         /// <returns>Each block once, in the order found.</returns>
-        internal static List<BlockState> CollectChain(ShipState ship, Direction dir, CellOccupancy grid)
+        internal static List<BlockState> CollectChain(ShipState ship, Direction dir, GridModel grid)
         {
             // A block joins the chain when it is
             //   1. in front (cell + dir) of the ship or of a block already in the chain, or
             //   2. riding on a chain block: it covers the cell directly above one of the chain block's cells.
             var chain = new List<BlockState>();
             var blocksIdsVisited = new HashSet<BlockId>();
-            var movers = new Queue<GridPos>(CellOccupancy.CellsOf(ship));
+            var movers = new Queue<GridPos>(GridModel.CellsOf(ship));
             var step = dir.ToOffset();
             var stepUp = Direction.Up.ToOffset();
             while (movers.Count > 0)
@@ -98,7 +103,7 @@ namespace Thunderbirds.Rules
             if (block == null || !blocksIdsVisited.Add(block.Id)) return;
 
             chain.Add(block);
-            foreach (var blockPos in CellOccupancy.CellsOf(block))
+            foreach (var blockPos in GridModel.CellsOf(block))
                 movers.Enqueue(blockPos);
         }
 

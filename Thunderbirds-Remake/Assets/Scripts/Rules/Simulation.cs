@@ -13,6 +13,7 @@ namespace Thunderbirds.Rules
         private readonly Func<SimulationConfig> _buildConfig;
         private SimulationConfig _config;
         private readonly EventHub _events = new EventHub();
+        private readonly GravitySystem _gravity = new GravitySystem();
 
         private SimulationState _state;
 
@@ -94,6 +95,13 @@ namespace Thunderbirds.Rules
             _heldDirection = direction;
         }
 
+        public void ClearInput()
+        {
+            _heldDirection = null;
+            _pressedSinceLastStep = null;
+            ForgetRefusal();
+        }
+
         public void SwitchShip()
         {
             if (_state.Status != SimStatus.Playing) return;
@@ -112,6 +120,7 @@ namespace Thunderbirds.Rules
             _config = LoadConfig(); // live tuning: pick up Inspector edits
             _state = _buildState();
             _heldDirection = null;
+            _gravity.Reset();
             _pressedSinceLastStep = null;
             _stepTimer = 0f;
             ForgetRefusal();
@@ -123,8 +132,7 @@ namespace Thunderbirds.Rules
         /// <summary>1. Blocks due to fall move one cell (falls win ties). Issue #8.</summary>
         private void ApplyGravity(float dt)
         {
-            // TODO(#8): per-block fall timer (accumulator, _config.FallStepSeconds);
-            // raise BlockFell per cell and BlockLanded when it stops.
+            _gravity.Tick(_state, dt, _config.FallStepSeconds, _events);
         }
 
         /// <summary>2. The active ship steps in the held/latched direction. Issue #7.</summary>
@@ -150,7 +158,7 @@ namespace Thunderbirds.Rules
             _pressedSinceLastStep = null;
 
             var from = _state.GetShip(shipId).Position;
-            var result = MoveResolver.TryMove(_state, shipId, dir.Value, _config);
+            var result = MoveResolver.TryMove(_state, shipId, dir.Value, _config, _gravity.FallenCells);
             if (result.Accepted)
             {
                 ForgetRefusal();
