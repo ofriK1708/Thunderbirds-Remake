@@ -310,25 +310,5 @@ namespace Thunderbirds.Tests.EditMode
             Assert.IsTrue(r.Accepted);
             CollectionAssert.AreEqual(new[] { 'a' }, Letters(r));
         }
-
-        // ------------------------------------------------------------ vertical (until #12) ----
-
-        [Test]
-        public void Up_IntoABlock_RefusesUntilLiftExists()
-        {
-            var s = Level(
-                "##############",
-                "#AAAA....2222#",
-                "#AAAA....2222#",
-                "#.a..........#",
-                "#KK........11#",
-                "#KK........11#",
-                "##############");
-
-            var r = MoveResolver.TryMove(s, ShipId.Kestrel, Direction.Up, Config);
-
-            Assert.IsFalse(r.Accepted);
-            Assert.AreEqual(new GridPos(1, 1), s.GetShip(ShipId.Kestrel).Position);
-        }
     }
 }

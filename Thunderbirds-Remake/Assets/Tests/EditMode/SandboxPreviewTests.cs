@@ -65,17 +65,23 @@ namespace Thunderbirds.Tests.EditMode
 
             yield return Tap(Key.Space);
             Assert.AreEqual(ShipId.Atlas, preview.State.ActiveShip);
+            // Block c rests only on Atlas, so Atlas carries it (GDD §3 Carrying, #12): it travels along, it doesn't fall.
             var overheadBlock = preview.State.GetBlock(new BlockId('c'));
-            var blockStartY = overheadBlock.Position.Y;
+            var atlas = preview.State.GetShip(ShipId.Atlas);
+            Assert.AreEqual(ShipId.Atlas, overheadBlock.CarriedBy);
+            var blockStart = overheadBlock.Position;
+            var atlasStartX = atlas.Position.X;
             SetKeys(Key.A);
-            var fallDeadline = Time.realtimeSinceStartup + 5f;
-            while (overheadBlock.Position.Y == blockStartY && Time.realtimeSinceStartup < fallDeadline)
+            var carryDeadline = Time.realtimeSinceStartup + 2f;
+            while (atlas.Position.X == atlasStartX && Time.realtimeSinceStartup < carryDeadline)
                 yield return null;
             SetKeys();
             yield return null;
-            Assert.Less(overheadBlock.Position.Y, blockStartY,
-                $"Removing Atlas's support must make the block fall. Atlas: {preview.State.GetShip(ShipId.Atlas).Position}, paused: {preview.IsPaused}");
-            Assert.AreEqual(overheadBlock.Position.Y, preview.transform.Find("Block c").localPosition.y);
+            var travelled = atlasStartX - atlas.Position.X;
+            Assert.Greater(travelled, 0, $"Atlas should fly left. Atlas: {atlas.Position}, paused: {preview.IsPaused}");
+            Assert.AreEqual(new GridPos(blockStart.X - travelled, blockStart.Y), overheadBlock.Position,
+                "the carried block travels with Atlas");
+            Assert.AreEqual(overheadBlock.Position.X, preview.transform.Find("Block c").localPosition.x);
             yield return Tap(Key.Escape);
             Assert.IsTrue(preview.IsPaused);
             var atlasPosition = preview.State.GetShip(ShipId.Atlas).Position;
