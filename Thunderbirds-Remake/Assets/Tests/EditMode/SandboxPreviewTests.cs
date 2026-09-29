@@ -56,9 +56,12 @@ namespace Thunderbirds.Tests.EditMode
             yield return null;
             Assert.IsFalse(preview.IsPaused, "Sandbox should remain unpaused during movement.");
             Assert.Greater(preview.State.GetShip(ShipId.Kestrel).Position.X, start.X, "Initial keyboard movement");
-            var renderer = preview.transform.Find("Kestrel").GetComponent<SpriteRenderer>();
+            var kestrelView = preview.transform.Find("Kestrel").GetComponent<ShipView>();
+            var slideDeadline = Time.realtimeSinceStartup + 1f;
+            while (kestrelView.IsSliding && Time.realtimeSinceStartup < slideDeadline)
+                yield return null;
             Assert.AreEqual(GridSpace.FootprintCenter(preview.State.GetShip(ShipId.Kestrel).Position, 2, 2),
-                renderer.transform.localPosition);
+                kestrelView.transform.localPosition, "the sprite lands exactly on the model position");
 
             yield return Tap(Key.Space);
             Assert.AreEqual(ShipId.Atlas, preview.State.ActiveShip);
