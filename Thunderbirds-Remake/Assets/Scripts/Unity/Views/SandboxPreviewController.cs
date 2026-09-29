@@ -29,13 +29,17 @@ namespace Thunderbirds.Unity
         public bool IsPaused => _paused;
         public float RestartProgress => _input?.RestartProgress ?? 0f;
 
-        public void Initialize(GameConfig config, LevelData data, LevelDefinition definition, SpriteRenderer cellPrefab)
+        private int _campaignIndex = -1;
+
+        public void Initialize(GameConfig config, LevelData data, LevelDefinition definition, SpriteRenderer cellPrefab, int campaignIndex = -1)
         {
+            _campaignIndex = campaignIndex;
             _config = config;
             _simulation = new Simulation(
                 () => definition.CreateState(config.ToSimulationConfig(), config.livesPerLevel, config.OxygenFor(data)),
                 config.ToSimulationConfig);
             _simulation.Events.MoveRefused += OnMoveRefused;
+            _simulation.Events.LevelComplete += OnLevelComplete;
             _camera = Camera.main;
             _blockSprite = cellPrefab.sprite;
             _blockMaterial = cellPrefab.sharedMaterial;
@@ -78,6 +82,7 @@ namespace Thunderbirds.Unity
         {
             if (_simulation == null) return;
             if (!_paused) _simulation.Tick(Time.deltaTime);
+            _input.SetGameplayEnabled(!_paused && State.Status == SimStatus.Playing);
             RefreshVisuals();
         }
 
@@ -129,7 +134,7 @@ namespace Thunderbirds.Unity
         private void SetPaused(bool paused)
         {
             _paused = paused;
-            _input.SetGameplayEnabled(!paused);
+            _input.SetGameplayEnabled(!paused && State.Status == SimStatus.Playing);
             if (paused) _simulation.ClearInput();
         }
 
@@ -150,7 +155,10 @@ namespace Thunderbirds.Unity
             GUI.Label(new Rect(32, 67, 1200, 30), "WASD / arrows: move    Space / Tab: switch    Hold R: restart    Esc: pause    |    Gamepad: stick / D-pad, A, View, Menu");
             GUI.Box(new Rect(16, 610, 1248, 98), "");
             GUI.Label(new Rect(32, 620, 930, 26), Time.unscaledTime < _feedbackUntil ? _feedback : "Move and push blocks. Unsupported blocks and stacks fall automatically.");
-            GUI.Label(new Rect(32, 652, 900, 26), "Partial game: lifting, oxygen and mission endings are not active yet.");
+            var outcome = State.Status == SimStatus.Complete ? "RESCUE COMPLETE - Restart to play again"
+                : State.Status == SimStatus.Failed ? (State.LivesLeft <= 0 ? "CRUSHED" : "OUT OF OXYGEN") + " - Restart to retry"
+                : "Dock both ships before oxygen runs out.";
+            GUI.Label(new Rect(32, 652, 900, 26), $"Oxygen: {Mathf.CeilToInt(State.OxygenRemaining)}s    |    {outcome}");
             if (GUI.Button(new Rect(1000, 625, 110, 32), _paused ? "Resume" : "Pause")) SetPaused(!_paused);
             if (GUI.Button(new Rect(1120, 625, 125, 32), "Restart")) Restart();
             if (GUI.Button(new Rect(1000, 663, 245, 30), "Main menu")) SceneManager.LoadScene("MainMenu");
@@ -167,8 +175,14 @@ namespace Thunderbirds.Unity
 
         private void OnDestroy()
         {
+            if (_simulation != null) _simulation.Events.LevelComplete -= OnLevelComplete;
             if (_simulation != null) _simulation.Events.MoveRefused -= OnMoveRefused;
             _input?.Dispose();
+        }
+
+        private void OnLevelComplete(LevelComplete completed)
+        {
+            if (_campaignIndex >= 0) LevelProgress.Complete(_campaignIndex);
         }
     }
 }

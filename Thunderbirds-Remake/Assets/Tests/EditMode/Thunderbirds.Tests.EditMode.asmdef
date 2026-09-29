@@ -6,6 +6,7 @@
         "Thunderbirds.Unity",
         "Unity.InputSystem",
         "UnityEngine.UI",
+        "Unity.TextMeshPro",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],

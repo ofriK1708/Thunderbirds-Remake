@@ -23,6 +23,8 @@ namespace Thunderbirds.Unity
 
         private GameObject ownedEventSystem;
         private InputReader menuInput;
+        [SerializeField] private LevelCatalog levelCatalog;
+        private LevelSelectView levelSelect;
 
         private void Awake()
         {
@@ -66,7 +68,12 @@ namespace Thunderbirds.Unity
         {
             // Keep an explicitly wired production flow; otherwise open the playable sandbox.
             if (onPlay.GetPersistentEventCount() > 0) onPlay.Invoke();
-            else SceneManager.LoadScene("Game");
+            else
+            {
+                if (levelSelect == null)
+                    levelSelect = LevelSelectView.Create(transform, playButton.GetComponentInChildren<TMPro.TMP_Text>().font, levelCatalog);
+                levelSelect.Open(content.gameObject);
+            }
         }
 
         private void OnRectTransformDimensionsChange() => FitContent();

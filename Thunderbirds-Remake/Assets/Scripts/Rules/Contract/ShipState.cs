@@ -15,6 +15,9 @@ namespace Thunderbirds.Rules
         public int Load { get; internal set; }
         public float CrushSecondsLeft { get; internal set; }
 
+        /// <summary>Stage 4's handoff to lives/respawn in stage 5 (#14).</summary>
+        public bool IsCrushDue => !IsGhost && IsStressed && CrushSecondsLeft <= 0f;
+
         public ShipState(ShipId id, int width, int height, GridPos start, GridPos dock)
         {
             Id = id;

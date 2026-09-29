@@ -100,7 +100,8 @@ namespace Thunderbirds.Tests.EditMode
             Assert.IsInstanceOf<BlockFell>(sim.Events.Log[1]);
             Assert.AreEqual(2, sim.Events.Log.OfType<BlockLanded>().Count());
             sim.Tick(10f);
-            Assert.AreEqual(4, sim.Events.Log.Count, "A resting stack does not repeatedly land.");
+            Assert.AreEqual(2, sim.Events.Log.OfType<BlockFell>().Count(), "A resting stack does not keep falling.");
+            Assert.AreEqual(2, sim.Events.Log.OfType<BlockLanded>().Count(), "A resting stack does not repeatedly land.");
         }
 
         [Test]

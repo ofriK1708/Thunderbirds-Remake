@@ -41,6 +41,13 @@ namespace Thunderbirds.Tests.EditMode
             Assert.IsTrue(play.interactable);
             play.onClick.Invoke();
             yield return null;
+            var selection = Object.FindFirstObjectByType<LevelSelectView>();
+            Assert.IsNotNull(selection);
+            selection.OnCancel(new BaseEventData(EventSystem.current));
+            Assert.AreEqual(play.gameObject, EventSystem.current.currentSelectedGameObject);
+            play.onClick.Invoke();
+            Object.FindObjectsByType<Button>(FindObjectsSortMode.None).Single(b => b.name == "Sandbox Button").onClick.Invoke();
+            yield return null;
             yield return null;
             Assert.AreEqual("Game", SceneManager.GetActiveScene().name);
             var preview = Object.FindFirstObjectByType<SandboxPreviewController>();
@@ -130,6 +137,9 @@ namespace Thunderbirds.Tests.EditMode
             _gamepad = InputSystem.AddDevice<Gamepad>();
             yield return TapGamepad(GamepadButton.DpadUp);
             Assert.AreEqual("Play Button", EventSystem.current.currentSelectedGameObject.name);
+            yield return TapGamepad(GamepadButton.South);
+            Assert.IsNotNull(Object.FindFirstObjectByType<LevelSelectView>());
+            Assert.AreEqual("Sandbox Button", EventSystem.current.currentSelectedGameObject.name);
             yield return TapGamepad(GamepadButton.South);
             yield return null;
             var gamepadPreview = Object.FindFirstObjectByType<SandboxPreviewController>();

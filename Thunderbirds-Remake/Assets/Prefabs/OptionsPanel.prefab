@@ -2863,7 +2863,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: PREVIEW ONLY  /  Changes are not applied or saved yet.
+  m_text: Fullscreen is saved. Audio and push preview are coming soon.
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 92e34a4db2d9b8e4a935f02188007e6d, type: 2}
   m_sharedMaterial: {fileID: 3929998117395444921, guid: 92e34a4db2d9b8e4a935f02188007e6d, type: 2}
