@@ -32,6 +32,8 @@ namespace Thunderbirds.Rules
 
         public void Validate()
         {
+            if (CrushGraceSeconds <= 0f || float.IsNaN(CrushGraceSeconds) || float.IsInfinity(CrushGraceSeconds))
+                throw new ArgumentException("CrushGraceSeconds must be finite and > 0");
             if (AtlasMoveStepSeconds <= 0f) throw new ArgumentException("AtlasMoveStepSeconds must be > 0");
             if (KestrelSpeedRatio <= 0f) throw new ArgumentException("KestrelSpeedRatio must be > 0");
             if (FallStepSeconds <= 0f) throw new ArgumentException("FallStepSeconds must be > 0");

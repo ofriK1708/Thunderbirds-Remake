@@ -14,6 +14,8 @@ namespace Thunderbirds.Rules
         private SimulationConfig _config;
         private readonly EventHub _events = new EventHub();
         private readonly GravitySystem _gravity = new GravitySystem();
+        private readonly LoadTracker _loads = new LoadTracker();
+        private readonly CountdownTimer _oxygen = new CountdownTimer();
 
         private SimulationState _state;
 
@@ -48,6 +50,7 @@ namespace Thunderbirds.Rules
             _buildConfig = buildConfig ?? throw new ArgumentNullException(nameof(buildConfig));
             _config = LoadConfig();
             _state = _buildState();
+            _oxygen.Start(_state.OxygenRemaining);
             CarryTracker.Update(_state); // blocks placed on a ship in the level file start carried
         }
 
@@ -120,9 +123,11 @@ namespace Thunderbirds.Rules
         {
             _config = LoadConfig(); // live tuning: pick up Inspector edits
             _state = _buildState();
+            _oxygen.Start(_state.OxygenRemaining);
             CarryTracker.Update(_state);
             _heldDirection = null;
             _gravity.Reset();
+            _loads.Reset();
             _pressedSinceLastStep = null;
             _stepTimer = 0f;
             ForgetRefusal();
@@ -209,8 +214,7 @@ namespace Thunderbirds.Rules
         /// <summary>4. Ship loads; start, reset or tick crush countdowns. Issue #13.</summary>
         private void UpdateLoadsAndCrush(float dt)
         {
-            // TODO(#13): LoadTracker + CountdownTimer (_config.CrushGraceSeconds);
-            // raise ShipStressed / ShipRelieved.
+            _loads.Tick(_state, _config, dt, _events);
         }
 
         /// <summary>5. Crushes cost a life; ghosts materialise when their start area is clear. Issue #14.</summary>
@@ -222,20 +226,30 @@ namespace Thunderbirds.Rules
         /// <summary>6. Oxygen ticks down. Issue #15.</summary>
         private void TickOxygen(float dt)
         {
-            // TODO(#15): CountdownTimer; raise OxygenChanged only when the whole second changes.
+            var before = Math.Ceiling(_state.OxygenRemaining);
+            _oxygen.Tick(dt);
+            _state.OxygenRemaining = _oxygen.Remaining;
+            if (Math.Ceiling(_state.OxygenRemaining) != before)
+                _events.Raise(new OxygenChanged(_state.OxygenRemaining, _state.OxygenTotal));
         }
 
         /// <summary>7. No lives left, or oxygen = 0. Returns true if the level failed. Issue #15.</summary>
         private bool CheckFailure()
         {
-            // TODO(#15): set Status = Failed, raise LevelFailed(reason).
-            return false;
+            if (_state.LivesLeft > 0 && _state.OxygenRemaining > 0) return false;
+            _state.Status = SimStatus.Failed;
+            ClearInput();
+            _events.Raise(new LevelFailed(_state.LivesLeft <= 0 ? FailReason.Crushed : FailReason.OutOfOxygen));
+            return true;
         }
 
         /// <summary>8. Both ships on their docks. Issue #15.</summary>
         private void CheckSuccess()
         {
-            // TODO(#15): WinChecker; set Status = Complete, raise LevelComplete.
+            if (!WinChecker.IsComplete(_state)) return;
+            _state.Status = SimStatus.Complete;
+            ClearInput();
+            _events.Raise(new LevelComplete());
         }
     }
 }

@@ -38,7 +38,7 @@ namespace Thunderbirds.Editor
             var music = SliderRow(content, "Music Volume", 65, out var musicValue);
             var effects = SliderRow(content, "Sound Effects", -80, out var effectsValue);
             var preview = ToggleRow(content, "Push Preview", -225, false);
-            Text(content, "Preview notice", "PREVIEW ONLY  /  Changes are not applied or saved yet.", 20,
+            Text(content, "Preview notice", "Fullscreen is saved. Audio and push preview are coming soon.", 20,
                 0, -339, 1450, 40, Gold);
             var backRect = Rect("Back Button", content, 0, -427, 310, 66);
             var image = backRect.gameObject.AddComponent<Image>();

@@ -92,6 +92,7 @@ namespace Thunderbirds.Editor
             var serialized = new SerializedObject(root.GetComponent<Thunderbirds.Unity.MainMenuView>());
             serialized.FindProperty("content").objectReferenceValue = frame;
             serialized.FindProperty("playButton").objectReferenceValue = play;
+            serialized.FindProperty("levelCatalog").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Thunderbirds.Unity.LevelCatalog>("Assets/Levels/LevelCatalog.asset");
             serialized.FindProperty("howToPlayButton").objectReferenceValue = how;
             serialized.FindProperty("optionsButton").objectReferenceValue = options;
             serialized.FindProperty("quitButton").objectReferenceValue = quit;

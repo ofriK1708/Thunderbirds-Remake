@@ -45,11 +45,13 @@ namespace Thunderbirds.Unity
 
         private void Start()
         {
-            if (Level == null && previewLevel != null)
+            var selected = LevelLaunch.Take(out var campaignIndex);
+            var data = selected != null ? selected : previewLevel;
+            if (Level == null && data != null)
             {
-                Build(LevelParser.Parse(previewLevel.grid, config.atlas.pushCapacity));
+                Build(LevelParser.Parse(data.grid, config.atlas.pushCapacity));
                 // The preview supplies a playable bridge until the production LevelController exists.
-                gameObject.AddComponent<SandboxPreviewController>().Initialize(config, previewLevel, Level, dockPadPrefab);
+                gameObject.AddComponent<SandboxPreviewController>().Initialize(config, data, Level, dockPadPrefab, campaignIndex);
             }
         }
 
