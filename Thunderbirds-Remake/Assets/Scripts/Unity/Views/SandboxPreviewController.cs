@@ -16,7 +16,7 @@ namespace Thunderbirds.Unity
         private GameConfig _config;
         private Simulation _simulation;
         private InputReader _input;
-        private readonly Dictionary<ShipId, SpriteRenderer> _ships = new Dictionary<ShipId, SpriteRenderer>();
+        private readonly Dictionary<ShipId, ShipView> _ships = new Dictionary<ShipId, ShipView>();
         private readonly Dictionary<BlockId, BlockView> _blocks = new Dictionary<BlockId, BlockView>();
         private Camera _camera;
         private Sprite _blockSprite;
@@ -53,11 +53,14 @@ namespace Thunderbirds.Unity
             }
             foreach (var ship in State.Ships)
             {
-                var renderer = Instantiate(cellPrefab, transform);
-                renderer.name = ship.Id.ToString();
-                renderer.sortingLayerName = "Ships";
-                renderer.transform.localScale = new Vector3(ship.Width - 0.12f, ship.Height - 0.12f, 1);
-                _ships.Add(ship.Id, renderer);
+                var view = new GameObject(ship.Id.ToString()).AddComponent<ShipView>();
+                view.transform.SetParent(transform, false);
+                var body = Instantiate(cellPrefab, view.transform);
+                body.name = "Body";
+                body.sortingLayerName = "Ships";
+                body.transform.localScale = new Vector3(ship.Width - 0.12f, ship.Height - 0.12f, 1);
+                view.Bind(ship, _simulation.Events, config, body);
+                _ships.Add(ship.Id, view);
             }
             CreateActions();
             RefreshVisuals();
@@ -89,8 +92,8 @@ namespace Thunderbirds.Unity
                 _blocks[block.Id].SyncPosition(block);
             foreach (var ship in State.Ships)
             {
-                var renderer = _ships[ship.Id];
-                renderer.transform.localPosition = GridSpace.FootprintCenter(ship.Position, ship.Width, ship.Height);
+                // ShipView slides itself from ShipMoved events; the sandbox only tints the active ship.
+                var renderer = _ships[ship.Id].Body;
                 var colour = ship.Id == ShipId.Kestrel ? new Color(0.35f, 0.8f, 1f) : new Color(1f, 0.65f, 0.3f);
                 renderer.color = ship.Id == State.ActiveShip ? Color.Lerp(colour, Color.white, 0.35f) : colour * 0.7f;
             }
@@ -120,6 +123,9 @@ namespace Thunderbirds.Unity
                 var view = _blocks[block.Id];
                 view.Build(block, _config, _blockSprite, _blockMaterial);
             }
+            // Restart builds new ShipState objects: rebind so each view follows the new ship.
+            foreach (var ship in State.Ships)
+                _ships[ship.Id].Bind(ship, _simulation.Events, _config);
             SetPaused(false);
             _feedbackUntil = 0;
             RefreshVisuals();
