@@ -48,6 +48,7 @@ namespace Thunderbirds.Rules
             _buildConfig = buildConfig ?? throw new ArgumentNullException(nameof(buildConfig));
             _config = LoadConfig();
             _state = _buildState();
+            CarryTracker.Update(_state); // blocks placed on a ship in the level file start carried
         }
 
         /// <summary>Fixed config (tests); Restart keeps the same values.</summary>
@@ -119,6 +120,7 @@ namespace Thunderbirds.Rules
         {
             _config = LoadConfig(); // live tuning: pick up Inspector edits
             _state = _buildState();
+            CarryTracker.Update(_state);
             _heldDirection = null;
             _gravity.Reset();
             _pressedSinceLastStep = null;
@@ -166,6 +168,8 @@ namespace Thunderbirds.Rules
                 var offset = dir.Value.ToOffset();
                 foreach (var block in result.Chain)
                     _events.Raise(new BlockMoved(block.Id, block.Position - offset, block.Position, stepSeconds));
+                foreach (var block in result.Released)
+                    _events.Raise(new BlockReleased(block.Id, shipId));
                 return;
             }
 
@@ -199,7 +203,7 @@ namespace Thunderbirds.Rules
         /// <summary>3. Each block's CarriedBy from its supports. Issue #12.</summary>
         private void UpdateCarryStates()
         {
-            // TODO(#12): CarryTracker.
+            CarryTracker.Update(_state);
         }
 
         /// <summary>4. Ship loads; start, reset or tick crush countdowns. Issue #13.</summary>

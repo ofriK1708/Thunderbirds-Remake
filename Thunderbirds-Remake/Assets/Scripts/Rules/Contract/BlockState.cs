@@ -15,6 +15,12 @@ namespace Thunderbirds.Rules
 
         public GridPos Position { get; internal set; }
 
+        /// <summary>
+        /// The ship carrying this block, or null when it is Resting (GDD §3 Carrying). Updated once per tick
+        /// by CarryTracker; cleared the moment an obstacle releases the block.
+        /// </summary>
+        public ShipId? CarriedBy { get; internal set; }
+
         public BlockState(BlockId id, GridPos position, IReadOnlyList<GridPos> cells, ColourClass colour)
         {
             Id = id;
