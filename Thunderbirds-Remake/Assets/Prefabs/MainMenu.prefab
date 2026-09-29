@@ -257,6 +257,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.MainMenuView
   content: {fileID: 2460557698311501865}
   playButton: {fileID: 2745090796555409019}
+  levelCatalog: {fileID: 11400000, guid: 862d9bad58216e046a8c434ba5af7047, type: 2}
   howToPlayButton: {fileID: 427593047838342210}
   optionsButton: {fileID: 4888961019696312625}
   quitButton: {fileID: 2780644178231688476}

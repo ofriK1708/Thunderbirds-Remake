@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Thunderbirds.Unity
 {
-    /// <summary>Preview-only controls: no settings are applied or saved.</summary>
+    /// <summary>Persistent fullscreen setting; audio and push-preview controls await their features.</summary>
     public sealed class OptionsView : MonoBehaviour
     {
         [SerializeField] private RectTransform content;
@@ -50,6 +50,9 @@ namespace Thunderbirds.Unity
         private void OnEnable()
         {
             Fit();
+            fullscreen.SetIsOnWithoutNotify(DisplaySettings.Fullscreen);
+            fullscreen.onValueChanged.AddListener(DisplaySettings.SetFullscreen);
+            music.interactable = effects.interactable = pushPreview.interactable = false;
             backButton.onClick.AddListener(Close);
             music.onValueChanged.AddListener(UpdateMusic);
             effects.onValueChanged.AddListener(UpdateEffects);
@@ -59,6 +62,7 @@ namespace Thunderbirds.Unity
 
         private void OnDisable()
         {
+            fullscreen.onValueChanged.RemoveListener(DisplaySettings.SetFullscreen);
             backButton.onClick.RemoveListener(Close);
             music.onValueChanged.RemoveListener(UpdateMusic);
             effects.onValueChanged.RemoveListener(UpdateEffects);
