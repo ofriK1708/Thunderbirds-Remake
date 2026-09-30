@@ -115,7 +115,8 @@ stateDiagram-v2
 - A ship's **load** is the full weight of every block it carries (including everything stacked on them). A block also held by anything static adds no load. Exception: a block resting only on the two ships (carried by neither) counts fully toward **both** ships' loads.
 - If load > `loadCapacity` (e.g. something fell onto a carried stack), the ship is **Stressed**: it shakes, flashes red, and a countdown ring of `crushGraceSeconds` appears above it. Removing the load in time (scraping it off against a wall, or switching ships and pushing it away) resets the countdown.
 - When the countdown ends, the ship is **crushed**: its carried blocks are released and it loses one of the level's **3 lives**. Only that ship respawns at its start cell; the rest of the level stays as it is. If its start area is occupied, it waits as a **blinking ghost** (not solid, not selectable), control switches to the other ship, and it materialises once the area is clear.
-- Losing the **last life** fails the level.
+- Losing the **last life** fails the level; that ship does not respawn.
+- A materialising ship does **not** take control back — unless the active ship is itself a ghost (both ships were crushed with blocked starts), in which case control goes to whichever ship materialises first.
 
 **Order within each simulation tick** (fixed, so results are always the same)
 1. **Gravity** — blocks due to fall move one cell. *(Falls win ties: a block falling into a cell a ship is entering on the same tick gets the cell, and the ship's move is refused.)*
@@ -467,3 +468,4 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 | v0.1.2 | 2026-09-24 | §7: simulation contract agreed in pair session (#3) — `SetHeldDirection` replaces `TryMove`, events queued and flushed after each tick, event arguments, grid conventions, `FakeSimulation` |
 | v0.1.3 | 2026-09-24 | §7: `Simulation` skeleton with the fixed tick order; tuning config re-read on every Restart (live Inspector tuning) |
 | v0.1.4 | 2026-09-26 | §3 Push: holding into a refusal bumps once and retries silently; `refusalHintSeconds` hint popup; blocked reported before too heavy. §7: `RefusalHint` event, `MoveRefused` carries the chain colour (#7) |
+| v0.1.5 | 2026-09-30 | §3 Load, crush & lives: no respawn after the last life; who gets control when a ghost materialises (#14) |
