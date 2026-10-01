@@ -19,11 +19,15 @@ namespace Thunderbirds.Tests.EditMode
         private Gamepad _gamepad;
         private InputSettings _originalSettings;
         private InputSettings _testSettings;
+        private bool? _originalRunInBackground;
 
         [UnityTest]
         public IEnumerator PlayButton_OpensSandbox_WithMovementSwitchPauseAndRestart()
         {
             yield return new EnterPlayMode();
+            // An unfocused Editor does not tick the player loop, so Start (and LevelView's sandbox) never runs.
+            _originalRunInBackground = Application.runInBackground;
+            Application.runInBackground = true;
             // Batch tests have no focused Game view. Use an isolated settings copy for virtual input.
             _originalSettings = InputSystem.settings;
             _testSettings = Object.Instantiate(_originalSettings);
@@ -47,7 +51,7 @@ namespace Thunderbirds.Tests.EditMode
             yield return null;
             Assert.AreEqual("Game", SceneManager.GetActiveScene().name);
             var preview = Object.FindFirstObjectByType<SandboxPreviewController>();
-            Assert.IsNotNull(preview);
+            Assert.IsNotNull(preview, $"LevelView.Start has not run yet (frame {Time.frameCount}).");
             Assert.IsNotNull(preview.State);
             Assert.AreEqual(2, preview.State.Ships.Count);
             Assert.AreEqual(3, preview.State.Blocks.Count);
@@ -192,6 +196,8 @@ namespace Thunderbirds.Tests.EditMode
             _gamepad = null;
             if (_originalSettings != null) InputSystem.settings = _originalSettings;
             if (_testSettings != null) Object.DestroyImmediate(_testSettings);
+            if (_originalRunInBackground.HasValue) Application.runInBackground = _originalRunInBackground.Value;
+            _originalRunInBackground = null;
             if (Application.isPlaying) yield return new ExitPlayMode();
         }
     }
