@@ -32,6 +32,11 @@ namespace Thunderbirds.Unity
         private float _tilt; // current lean, degrees
         private float _bobWeight; // 0 while moving, 1 when fully idle
         private float _bobTime;
+        private Color _baseColour;
+        private bool _active, _stressed, _ghost;
+        private float _feedbackTime, _highlightLeft, _bumpLeft;
+        private Vector3 _bumpDirection;
+        private const float BumpSeconds = 0.18f;
 
         public ShipId Ship => _ship.Id;
         public SpriteRenderer Body => body;
@@ -43,7 +48,7 @@ namespace Thunderbirds.Unity
 
         /// <summary>Attach to a ship and its simulation's events, and snap to where the model says it is.</summary>
         public void Bind(ShipState ship, ISimulationEvents events, GameConfig config,
-            SpriteRenderer bodyRenderer = null)
+            SpriteRenderer bodyRenderer = null, bool isActive = false)
         {
             Unbind();
             _ship = ship ?? throw new ArgumentNullException(nameof(ship));
@@ -51,11 +56,21 @@ namespace Thunderbirds.Unity
             _config = config ? config : throw new ArgumentNullException(nameof(config));
             if (bodyRenderer != null) body = bodyRenderer;
             if (body == null) throw new InvalidOperationException("ShipView needs a body SpriteRenderer child.");
+            _baseColour = body.color;
+            _active = isActive;
+            _stressed = ship.IsStressed;
+            _ghost = ship.IsGhost;
+            _feedbackTime = _highlightLeft = _bumpLeft = 0f;
 
             // Ships don't bob in sync: offset the phase per ship.
             _bobTime = (int)ship.Id * 0.37f / BobHertz;
             _events.ShipMoved += OnShipMoved;
             _events.ShipRespawned += OnShipRespawned;
+            _events.ActiveShipChanged += OnActiveShipChanged;
+            _events.ShipStressed += OnShipStressed;
+            _events.ShipRelieved += OnShipRelieved;
+            _events.ShipCrushed += OnShipCrushed;
+            _events.MoveRefused += OnMoveRefused;
             SnapToModel();
         }
 
@@ -64,7 +79,20 @@ namespace Thunderbirds.Unity
             if (_events == null) return;
             _events.ShipMoved -= OnShipMoved;
             _events.ShipRespawned -= OnShipRespawned;
+            _events.ActiveShipChanged -= OnActiveShipChanged;
+            _events.ShipStressed -= OnShipStressed;
+            _events.ShipRelieved -= OnShipRelieved;
+            _events.ShipCrushed -= OnShipCrushed;
+            _events.MoveRefused -= OnMoveRefused;
+            StopSlide();
+            if (body != null)
+            {
+                body.color = _baseColour;
+                body.transform.localPosition = Vector3.zero;
+                body.transform.localRotation = Quaternion.identity;
+            }
             _events = null;
+            _ship = null;
         }
 
         /// <summary>Jump straight to the model position (Restart, respawn): no slide, no lean.</summary>
@@ -75,6 +103,8 @@ namespace Thunderbirds.Unity
             transform.localPosition = _target;
             _travelX = 0;
             _tilt = 0;
+            _bobWeight = 0;
+            _highlightLeft = _bumpLeft = 0f;
             ApplyPose();
         }
 
@@ -88,7 +118,49 @@ namespace Thunderbirds.Unity
 
         private void OnShipRespawned(ShipRespawned e)
         {
-            if (e.Ship == _ship.Id) SnapToModel();
+            if (e.Ship != _ship.Id) return;
+            _ghost = e.IsGhost;
+            _stressed = false;
+            _feedbackTime = 0f;
+            SnapToModel();
+        }
+
+        private void OnActiveShipChanged(ActiveShipChanged e)
+        {
+            _active = e.Active == _ship.Id;
+            _highlightLeft = _active ? _config.switchHighlightSeconds : 0f;
+            ApplyPose();
+        }
+
+        private void OnShipStressed(ShipStressed e)
+        {
+            if (e.Ship != _ship.Id) return;
+            _stressed = true;
+            _feedbackTime = 0f;
+            ApplyPose();
+        }
+
+        private void OnShipRelieved(ShipRelieved e)
+        {
+            if (e.Ship != _ship.Id) return;
+            _stressed = false;
+            ApplyPose();
+        }
+
+        private void OnShipCrushed(ShipCrushed e)
+        {
+            if (e.Ship != _ship.Id) return;
+            _stressed = false;
+            _highlightLeft = _bumpLeft = 0f;
+            ApplyPose();
+        }
+
+        private void OnMoveRefused(MoveRefused e)
+        {
+            if (e.Ship != _ship.Id || _ghost) return;
+            var offset = e.Direction.ToOffset();
+            _bumpDirection = new Vector3(offset.X, offset.Y, 0f);
+            _bumpLeft = BumpSeconds;
         }
 
         /// <summary>
@@ -159,6 +231,11 @@ namespace Thunderbirds.Unity
         /// <summary>Tilt while travelling sideways, bob while idle. Presentation only; public for tests.</summary>
         public void UpdatePose(float dt)
         {
+            if (_ship == null) return;
+            dt = Mathf.Max(0f, dt);
+            _feedbackTime += dt;
+            _highlightLeft = Mathf.Max(0f, _highlightLeft - dt);
+            _bumpLeft = Mathf.Max(0f, _bumpLeft - dt);
             var moving = IsSliding;
             var targetTilt = moving ? -_travelX * _config.shipTiltDegrees : 0f; // lean into the direction of travel
             var blend = 1f - Mathf.Exp(-PoseBlendSpeed * dt); // frame-rate independent smoothing
@@ -172,7 +249,35 @@ namespace Thunderbirds.Unity
         {
             if (body == null) return;
             var bob = Mathf.Sin(_bobTime * BobHertz * 2f * Mathf.PI) * _config.hoverBobAmplitude * _bobWeight;
-            body.transform.localPosition = new Vector3(0f, bob, 0f);
+            var offset = new Vector3(0f, bob, 0f);
+            var colour = _active ? Color.Lerp(_baseColour, Color.white, 0.35f) : _baseColour * 0.7f;
+            colour.a = _baseColour.a;
+            // Single compositor: ghost overrides stress, stress overrides switch tint.
+            // Refusal motion can accompany stress, but never a ghost. Timers still expire underneath.
+            if (_ghost)
+            {
+                colour = _baseColour;
+                colour.a *= 0.2f + 0.35f * (0.5f + 0.5f * Mathf.Cos(_feedbackTime * 6f * Mathf.PI));
+            }
+            else
+            {
+                if (_stressed)
+                {
+                    colour = Color.Lerp(colour, _config.blockRed, 0.65f + 0.35f * Mathf.Cos(_feedbackTime * 8f * Mathf.PI));
+                    offset += new Vector3(Mathf.Sin(_feedbackTime * 86f), Mathf.Sin(_feedbackTime * 113f), 0f) * 0.035f;
+                }
+                else if (_highlightLeft > 0f)
+                {
+                    // HDR white also brightens a normally white renderer tint on textured sprites.
+                    var pulse = 0.65f + 0.35f * Mathf.Cos((_config.switchHighlightSeconds - _highlightLeft) * 6f * Mathf.PI);
+                    colour = Color.Lerp(colour, new Color(2f, 2f, 2f, colour.a), pulse);
+                }
+                colour.a = _baseColour.a;
+                if (_bumpLeft > 0f)
+                    offset += _bumpDirection * (0.12f * Mathf.Sin(Mathf.PI * (1f - _bumpLeft / BumpSeconds)));
+            }
+            body.color = colour;
+            body.transform.localPosition = offset;
             body.transform.localRotation = Quaternion.Euler(0f, 0f, _tilt);
         }
 

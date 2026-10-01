@@ -140,6 +140,141 @@ namespace Thunderbirds.Tests.EditMode
             Assert.AreEqual(new Vector3(2f, 2f, 0f), _view.transform.localPosition);
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void Switch_PulsesWithoutHidingOrBlockingMovement_ThenExpires(bool automatic)
+        {
+            _events.Raise(new ActiveShipChanged(ShipId.Kestrel, automatic));
+            _events.Flush();
+            Assert.Greater(_view.Body.color.r, 1f);
+            Move(1, 0, 0.08f);
+            _view.AdvanceSlide(0.08f);
+            Assert.IsFalse(_view.IsSliding);
+            for (var i = 0; i < 120; i++)
+            {
+                _view.UpdatePose(Frame);
+                Assert.AreEqual(1f, _view.Body.color.a);
+                Assert.IsTrue(_view.Body.enabled);
+            }
+            Assert.AreEqual(Color.white, _view.Body.color);
+        }
+
+        [Test]
+        public void Stress_OverridesSwitch_AndReliefRestoresIt()
+        {
+            _config.hoverBobAmplitude = 0;
+            _events.Raise(new ActiveShipChanged(ShipId.Kestrel, false));
+            _events.Raise(new ShipStressed(ShipId.Kestrel, 8, 3));
+            _events.Flush();
+            _view.UpdatePose(0.03f);
+            Assert.Greater(_view.Body.color.r, _view.Body.color.g);
+            Assert.Greater(_view.Body.transform.localPosition.sqrMagnitude, 0);
+            Assert.AreEqual(new Vector3(2, 2, 0), _view.transform.localPosition);
+            _events.Raise(new ShipRelieved(ShipId.Kestrel));
+            _events.Flush();
+            Assert.Greater(_view.Body.color.g, 1f);
+            Assert.AreEqual(Vector3.zero, _view.Body.transform.localPosition);
+        }
+
+        [Test]
+        public void Ghost_OverridesStressAndSwitch_BlinksTranslucent_ThenMaterialises()
+        {
+            _config.hoverBobAmplitude = 0;
+            _events.Raise(new ShipRespawned(ShipId.Kestrel, _kestrel.Start, true));
+            _events.Raise(new ShipStressed(ShipId.Kestrel, 8, 3));
+            _events.Raise(new ActiveShipChanged(ShipId.Kestrel, true));
+            _events.Raise(new MoveRefused(ShipId.Kestrel, Direction.Right, RefuseReason.Blocked, null, ColourClass.Teal));
+            _events.Flush();
+            var alpha = _view.Body.color.a;
+            _view.UpdatePose(0.1f);
+            Assert.AreNotEqual(alpha, _view.Body.color.a);
+            Assert.That(_view.Body.color.a, Is.InRange(0.2f, 0.55f));
+            Assert.AreEqual(_view.Body.color.r, _view.Body.color.g);
+            Assert.AreEqual(Vector3.zero, _view.Body.transform.localPosition);
+            _events.Raise(new ShipRespawned(ShipId.Kestrel, _kestrel.Start, false));
+            _events.Flush();
+            Assert.AreEqual(Color.white, _view.Body.color);
+        }
+
+        [TestCase(Direction.Up, 0, 1)]
+        [TestCase(Direction.Down, 0, -1)]
+        [TestCase(Direction.Left, -1, 0)]
+        [TestCase(Direction.Right, 1, 0)]
+        public void Refusal_BumpsOnlyTheBody_ThenReturns(Direction direction, int x, int y)
+        {
+            _config.hoverBobAmplitude = 0;
+            _events.Raise(new MoveRefused(ShipId.Kestrel, direction, RefuseReason.Blocked, null, ColourClass.Teal));
+            _events.Flush();
+            _view.UpdatePose(0.09f);
+            Assert.That(Vector3.Distance(new Vector3(x, y, 0) * 0.12f, _view.Body.transform.localPosition), Is.LessThan(1e-5f));
+            Assert.AreEqual(new Vector3(2, 2, 0), _view.transform.localPosition);
+            Assert.AreEqual(_kestrel.Start, _kestrel.Position);
+            _view.UpdatePose(0.2f);
+            Assert.AreEqual(Vector3.zero, _view.Body.transform.localPosition);
+        }
+
+        [Test]
+        public void Rebind_ClearsEffectsAndOldSubscriptions_WithoutChangingOriginalTint()
+        {
+            _events.Raise(new ShipRespawned(ShipId.Kestrel, _kestrel.Start, true));
+            _events.Flush();
+            var oldEvents = _events;
+            _events = new EventHub();
+            _view.Bind(_kestrel, _events, _config, isActive: true);
+            oldEvents.Raise(new ShipStressed(ShipId.Kestrel, 8, 3));
+            oldEvents.Raise(new ShipRespawned(ShipId.Kestrel, _kestrel.Start, true));
+            oldEvents.Flush();
+            _view.UpdatePose(0.05f);
+            Assert.AreEqual(Color.white, _view.Body.color);
+            _view.Unbind();
+            _events.Raise(new ActiveShipChanged(ShipId.Kestrel, false));
+            _events.Flush();
+            Assert.AreEqual(Color.white, _view.Body.color);
+        }
+
+        [Test]
+        public void OtherShipsFeedback_IsIgnored()
+        {
+            var colour = _view.Body.color;
+            _events.Raise(new ShipStressed(ShipId.Atlas, 9, 3));
+            _events.Raise(new ShipRespawned(ShipId.Atlas, new GridPos(5, 1), true));
+            _events.Raise(new MoveRefused(ShipId.Atlas, Direction.Right, RefuseReason.Blocked, null, ColourClass.Teal));
+            _events.Flush();
+            _view.UpdatePose(0.09f);
+            Assert.AreEqual(colour, _view.Body.color);
+            Assert.AreEqual(0f, _view.Body.transform.localPosition.x);
+        }
+
+        [Test]
+        public void RepeatedRestarts_PreserveAuthoredColourAndOpacity()
+        {
+            _view.Unbind();
+            var original = new Color(0.3f, 0.6f, 0.9f, 0.8f);
+            _view.Body.color = original;
+            for (var i = 0; i < 3; i++)
+            {
+                _view.Bind(_kestrel, _events, _config, isActive: true);
+                _events.Raise(new ActiveShipChanged(ShipId.Kestrel, false));
+                _events.Flush();
+                _view.UpdatePose(0.1f);
+                Assert.AreEqual(original.a, _view.Body.color.a);
+            }
+            _view.Unbind();
+            Assert.AreEqual(original, _view.Body.color);
+        }
+
+        [Test]
+        public void SwitchPulse_ExpiresEvenWhileStressOverridesIt()
+        {
+            _events.Raise(new ActiveShipChanged(ShipId.Kestrel, false));
+            _events.Raise(new ShipStressed(ShipId.Kestrel, 8, 3));
+            _events.Flush();
+            _view.UpdatePose(_config.switchHighlightSeconds + 0.1f);
+            _events.Raise(new ShipRelieved(ShipId.Kestrel));
+            _events.Flush();
+            Assert.AreEqual(Color.white, _view.Body.color);
+        }
+
         private void Move(int dx, int dy, float stepSeconds)
         {
             var from = _kestrel.Position;

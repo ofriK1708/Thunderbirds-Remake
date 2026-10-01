@@ -59,7 +59,8 @@ namespace Thunderbirds.Unity
                 body.name = "Body";
                 body.sortingLayerName = "Ships";
                 body.transform.localScale = new Vector3(ship.Width - 0.12f, ship.Height - 0.12f, 1);
-                view.Bind(ship, _simulation.Events, config, body);
+                body.color = ship.Id == ShipId.Kestrel ? new Color(0.35f, 0.8f, 1f) : new Color(1f, 0.65f, 0.3f);
+                view.Bind(ship, _simulation.Events, config, body, ship.Id == State.ActiveShip);
                 _ships.Add(ship.Id, view);
             }
             CreateActions();
@@ -90,13 +91,6 @@ namespace Thunderbirds.Unity
         {
             foreach (var block in State.Blocks)
                 _blocks[block.Id].SyncPosition(block);
-            foreach (var ship in State.Ships)
-            {
-                // ShipView slides itself from ShipMoved events; the sandbox only tints the active ship.
-                var renderer = _ships[ship.Id].Body;
-                var colour = ship.Id == ShipId.Kestrel ? new Color(0.35f, 0.8f, 1f) : new Color(1f, 0.65f, 0.3f);
-                renderer.color = ship.Id == State.ActiveShip ? Color.Lerp(colour, Color.white, 0.35f) : colour * 0.7f;
-            }
             if (_camera == null) return;
             _camera.orthographic = true;
             _camera.rect = new Rect(0, 0.16f, 1, 0.66f);
@@ -125,7 +119,7 @@ namespace Thunderbirds.Unity
             }
             // Restart builds new ShipState objects: rebind so each view follows the new ship.
             foreach (var ship in State.Ships)
-                _ships[ship.Id].Bind(ship, _simulation.Events, _config);
+                _ships[ship.Id].Bind(ship, _simulation.Events, _config, isActive: ship.Id == State.ActiveShip);
             SetPaused(false);
             _feedbackUntil = 0;
             RefreshVisuals();
