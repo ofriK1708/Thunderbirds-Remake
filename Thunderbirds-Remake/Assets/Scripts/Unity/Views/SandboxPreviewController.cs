@@ -24,6 +24,8 @@ namespace Thunderbirds.Unity
         private bool _paused;
         private string _feedback = "Move beside a block and push left or right.";
         private float _feedbackUntil;
+        private string _levelTitle;
+        private string _levelHint;
 
         public IReadOnlySimulationState State => _simulation?.State;
         public bool IsPaused => _paused;
@@ -34,6 +36,9 @@ namespace Thunderbirds.Unity
         public void Initialize(GameConfig config, LevelData data, LevelDefinition definition, SpriteRenderer cellPrefab, int campaignIndex = -1)
         {
             _campaignIndex = campaignIndex;
+            _levelTitle = data.displayName;
+            _levelHint = string.IsNullOrWhiteSpace(data.hintText)
+                ? "Move and push blocks. Unsupported blocks and stacks fall automatically." : data.hintText;
             _config = config;
             _simulation = new Simulation(
                 () => definition.CreateState(config.ToSimulationConfig(), config.livesPerLevel, config.OxygenFor(data)),
@@ -142,13 +147,13 @@ namespace Thunderbirds.Unity
             if (_simulation == null) return;
             var previousMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
-            GUI.Box(new Rect(16, 12, 1248, 100), "MOVEMENT SANDBOX");
+            GUI.Box(new Rect(16, 12, 1248, 100), _levelTitle);
             GUI.Label(new Rect(32, 38, 800, 25), $"Active ship: {State.ActiveShip}    |    {(_paused ? "PAUSED" : "Move and push blocks to test the level")}");
             if (RestartProgress > 0f)
                 GUI.Label(new Rect(920, 38, 320, 25), $"Hold to restart: {RestartProgress:P0}");
             GUI.Label(new Rect(32, 67, 1200, 30), "WASD / arrows: move    Space / Tab: switch    Hold R: restart    Esc: pause    |    Gamepad: stick / D-pad, A, View, Menu");
             GUI.Box(new Rect(16, 610, 1248, 98), "");
-            GUI.Label(new Rect(32, 620, 930, 26), Time.unscaledTime < _feedbackUntil ? _feedback : "Move and push blocks. Unsupported blocks and stacks fall automatically.");
+            GUI.Label(new Rect(32, 620, 930, 26), Time.unscaledTime < _feedbackUntil ? _feedback : _levelHint);
             var outcome = State.Status == SimStatus.Complete ? "RESCUE COMPLETE - Restart to play again"
                 : State.Status == SimStatus.Failed ? (State.LivesLeft <= 0 ? "CRUSHED" : "OUT OF OXYGEN") + " - Restart to retry"
                 : "Dock both ships before oxygen runs out.";
