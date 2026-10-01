@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7068da2666b774895e667adba0e51d, type: 3}
+  m_Name: L2_SharedStrength
+  m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.LevelData
+  displayName: L2 - Shared Strength
+  grid: "################################\n################################\n#...........aa......11.........#\n#...........aa......11.........#\n########..######################\n########..######################\n#.AAAA..KK..bbb......2222......#\n#.AAAA..KK..bbb......2222......#\n################################"
+  timeLimitSeconds: 120
+  hintText: "Kestrel fits the narrow shaft and pushes teal. Switch to Atlas for yellow. Clear both routes to the pads."

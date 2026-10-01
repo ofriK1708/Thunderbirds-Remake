@@ -139,18 +139,20 @@ namespace Thunderbirds.Tests.EditMode
             Assert.AreEqual("Play Button", EventSystem.current.currentSelectedGameObject.name);
             yield return TapGamepad(GamepadButton.South);
             Assert.IsNotNull(Object.FindFirstObjectByType<LevelSelectView>());
-            Assert.AreEqual("Sandbox Button", EventSystem.current.currentSelectedGameObject.name);
+            Assert.AreEqual("L1 Button", EventSystem.current.currentSelectedGameObject.name);
             yield return TapGamepad(GamepadButton.South);
             yield return null;
             var gamepadPreview = Object.FindFirstObjectByType<SandboxPreviewController>();
             Assert.IsNotNull(gamepadPreview);
+            var campaignStart = gamepadPreview.State.GetShip(ShipId.Kestrel).Position;
+            Assert.AreEqual(new GridPos(2, 6), campaignStart, "gamepad launches the first campaign level");
             if (gamepadPreview.IsPaused) yield return TapGamepad(GamepadButton.Start);
             InputSystem.QueueStateEvent(_gamepad, new GamepadState { leftStick = Vector2.right });
             InputSystem.Update();
             var moveDeadline = Time.realtimeSinceStartup + 3f;
-            while (gamepadPreview.State.GetShip(ShipId.Kestrel).Position.X == 1 && Time.realtimeSinceStartup < moveDeadline)
+            while (gamepadPreview.State.GetShip(ShipId.Kestrel).Position.X == campaignStart.X && Time.realtimeSinceStartup < moveDeadline)
                 yield return null;
-            Assert.Greater(gamepadPreview.State.GetShip(ShipId.Kestrel).Position.X, 1);
+            Assert.Greater(gamepadPreview.State.GetShip(ShipId.Kestrel).Position.X, campaignStart.X);
             InputSystem.QueueStateEvent(_gamepad, new GamepadState());
             InputSystem.Update();
         }
