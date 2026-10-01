@@ -10,6 +10,8 @@ using UnityEngine.InputSystem.LowLevel;
 using UnityEngine.SceneManagement;
 using UnityEngine.TestTools;
 using UnityEngine.UI;
+using UnityEditor;
+using System.Reflection;
 
 namespace Thunderbirds.Tests.EditMode
 {
@@ -155,6 +157,91 @@ namespace Thunderbirds.Tests.EditMode
             Assert.Greater(gamepadPreview.State.GetShip(ShipId.Kestrel).Position.X, campaignStart.X);
             InputSystem.QueueStateEvent(_gamepad, new GamepadState());
             InputSystem.Update();
+        }
+
+        [UnityTest]
+        public IEnumerator CampaignOverlays_NextLevelRetryAndLevelSelect_WorkWithoutReloadingGame()
+        {
+            yield return new EnterPlayMode();
+            _originalRunInBackground = Application.runInBackground;
+            Application.runInBackground = true;
+            _originalSettings = InputSystem.settings;
+            _testSettings = Object.Instantiate(_originalSettings);
+            _testSettings.backgroundBehavior = InputSettings.BackgroundBehavior.IgnoreFocus;
+            _testSettings.editorInputBehaviorInPlayMode = InputSettings.EditorInputBehaviorInPlayMode.AllDeviceInputAlwaysGoesToGameView;
+            InputSystem.settings = _testSettings;
+            _gamepad = InputSystem.AddDevice<Gamepad>();
+            _keyboard = InputSystem.AddDevice<Keyboard>();
+            var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>("Assets/Levels/LevelCatalog.asset");
+            var progressKey = LevelProgress.Key(0);
+            var savedProgress = PlayerPrefs.HasKey(progressKey) ? (int?)PlayerPrefs.GetInt(progressKey) : null;
+            Assert.IsTrue(LevelLaunch.Select(catalog, 0));
+            yield return SceneManager.LoadSceneAsync("Game");
+            yield return null;
+            var preview = Object.FindFirstObjectByType<SandboxPreviewController>();
+            var view = preview.GetComponentInChildren<LevelOverlayView>();
+            var sim = (Simulation)typeof(SandboxPreviewController).GetField("_simulation", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(preview);
+            try
+            {
+                preview.SendMessage("OnApplicationFocus", false);
+                Assert.IsTrue(preview.IsPaused);
+                var oxygen = sim.State.OxygenRemaining;
+                yield return new WaitForSecondsRealtime(0.1f);
+                Assert.AreEqual(oxygen, sim.State.OxygenRemaining);
+                OverlayButton(view, "resume").onClick.Invoke();
+                Assert.IsFalse(preview.IsPaused);
+                foreach (var ship in sim.State.Ships) ship.Position = ship.Dock;
+                sim.Tick(0);
+                Assert.IsTrue(LevelProgress.IsCompleted(0));
+                Assert.IsFalse(view.IsReady);
+                InputSystem.QueueStateEvent(_gamepad, new GamepadState().WithButton(GamepadButton.South));
+                InputSystem.Update();
+                yield return new WaitForSecondsRealtime(1.2f);
+                Assert.IsFalse(view.IsReady, "held submit must not activate Next Level when the timer expires");
+                InputSystem.QueueStateEvent(_gamepad, new GamepadState());
+                InputSystem.Update();
+                yield return WaitForOverlay(view);
+                var sceneHandle = SceneManager.GetActiveScene().handle;
+                OverlayButton(view, "next").onClick.Invoke();
+                Assert.AreEqual(sceneHandle, SceneManager.GetActiveScene().handle);
+                Assert.AreSame(preview, Object.FindFirstObjectByType<SandboxPreviewController>());
+                Assert.AreEqual(new GridPos(8, 1), sim.State.GetShip(ShipId.Kestrel).Start);
+                Assert.AreEqual(SimStatus.Playing, sim.State.Status);
+                Assert.IsFalse(view.IsVisible);
+                sim.Tick(130);
+                Assert.AreEqual(SimStatus.Failed, sim.State.Status);
+                OverlayButton(view, "retry").onClick.Invoke();
+                Assert.AreEqual(SimStatus.Failed, sim.State.Status, "early retry is ignored");
+                yield return WaitForOverlay(view);
+                OverlayButton(view, "retry").onClick.Invoke();
+                Assert.AreEqual(SimStatus.Playing, sim.State.Status);
+                Assert.AreEqual(120, sim.State.OxygenRemaining);
+                Assert.AreEqual(3, sim.State.LivesLeft);
+                SetKeys(Key.D);
+                yield return new WaitForSecondsRealtime(0.2f);
+                SetKeys();
+                Assert.Greater(sim.State.GetShip(ShipId.Kestrel).Position.X, 8, "Retry restores gameplay input");
+                preview.SendMessage("OnApplicationFocus", false);
+                OverlayButton(view, "pauseSelect").onClick.Invoke();
+                yield return null; yield return null;
+                Assert.AreEqual("MainMenu", SceneManager.GetActiveScene().name);
+                Assert.IsNotNull(Object.FindFirstObjectByType<LevelSelectView>());
+            }
+            finally
+            {
+                if (savedProgress.HasValue) PlayerPrefs.SetInt(progressKey, savedProgress.Value);
+                else PlayerPrefs.DeleteKey(progressKey);
+                PlayerPrefs.Save();
+            }
+        }
+
+        private static Button OverlayButton(LevelOverlayView view, string name) =>
+            view.GetComponentsInChildren<Button>(true).Single(b => b.name == name + " Button");
+        private static IEnumerator WaitForOverlay(LevelOverlayView view)
+        {
+            var deadline = Time.realtimeSinceStartup + 4;
+            while (!view.IsReady && Time.realtimeSinceStartup < deadline) yield return null;
+            Assert.IsTrue(view.IsReady);
         }
 
         private void SetKeys(params Key[] keys)

@@ -3,6 +3,8 @@ using Thunderbirds.Rules;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 namespace Thunderbirds.Unity
 {
@@ -26,6 +28,11 @@ namespace Thunderbirds.Unity
         private float _feedbackUntil;
         private string _levelTitle;
         private string _levelHint;
+        private LevelDefinition _definition;
+        private LevelData _data;
+        private LevelOverlayView _overlays;
+        private GameObject _ownedEventSystem;
+        private InputReader _uiInput;
 
         public IReadOnlySimulationState State => _simulation?.State;
         public bool IsPaused => _paused;
@@ -36,15 +43,18 @@ namespace Thunderbirds.Unity
         public void Initialize(GameConfig config, LevelData data, LevelDefinition definition, SpriteRenderer cellPrefab, int campaignIndex = -1)
         {
             _campaignIndex = campaignIndex;
+            _data = data;
+            _definition = definition;
             _levelTitle = data.displayName;
             _levelHint = string.IsNullOrWhiteSpace(data.hintText)
                 ? "Move and push blocks. Unsupported blocks and stacks fall automatically." : data.hintText;
             _config = config;
             _simulation = new Simulation(
-                () => definition.CreateState(config.ToSimulationConfig(), config.livesPerLevel, config.OxygenFor(data)),
+                () => _definition.CreateState(config.ToSimulationConfig(), config.livesPerLevel, config.OxygenFor(_data)),
                 config.ToSimulationConfig);
             _simulation.Events.MoveRefused += OnMoveRefused;
             _simulation.Events.LevelComplete += OnLevelComplete;
+            _simulation.Events.LevelFailed += OnLevelFailed;
             _camera = Camera.main;
             _blockSprite = cellPrefab.sprite;
             _blockMaterial = cellPrefab.sharedMaterial;
@@ -69,6 +79,7 @@ namespace Thunderbirds.Unity
                 _ships.Add(ship.Id, view);
             }
             CreateActions();
+            CreateOverlays();
             RefreshVisuals();
         }
 
@@ -82,7 +93,28 @@ namespace Thunderbirds.Unity
             _input.Enable();
         }
 
-        private void TogglePause() => SetPaused(!_paused);
+        private void CreateOverlays()
+        {
+            var prefab = Resources.Load<LevelOverlayView>("LevelOverlays");
+            if (prefab == null) throw new System.InvalidOperationException("Missing LevelOverlays prefab.");
+            _overlays = Instantiate(prefab, transform);
+            if (EventSystem.current == null)
+                _ownedEventSystem = new GameObject("Game EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
+            var module = EventSystem.current.GetComponent<InputSystemUIInputModule>();
+            if (_ownedEventSystem != null)
+            {
+                _uiInput = new InputReader(InputSystem.actions);
+                _uiInput.ConfigureUI(module);
+            }
+            _overlays.Bind(() => SetPaused(false), Restart, NextLevel, () => LeaveLevel(true), () => LeaveLevel(false), module);
+        }
+
+        private void TogglePause()
+        {
+            if (State.Status != SimStatus.Playing) return;
+            if (_paused) _overlays.Cancel();
+            else SetPaused(true);
+        }
 
         private void Update()
         {
@@ -116,15 +148,23 @@ namespace Thunderbirds.Unity
 
         private void Restart()
         {
+            if (State.Status != SimStatus.Playing && !_overlays.IsReady) return;
             _simulation.Restart();
+            foreach (var view in _blocks.Values) view.gameObject.SetActive(false);
             foreach (var block in State.Blocks)
             {
-                var view = _blocks[block.Id];
+                if (!_blocks.TryGetValue(block.Id, out var view))
+                {
+                    view = new GameObject($"Block {block.Id.Letter}").AddComponent<BlockView>();
+                    view.transform.SetParent(transform, false); _blocks.Add(block.Id, view);
+                }
+                view.gameObject.SetActive(true);
                 view.Build(block, _config, _blockSprite, _blockMaterial);
             }
             // Restart builds new ShipState objects: rebind so each view follows the new ship.
             foreach (var ship in State.Ships)
                 _ships[ship.Id].Bind(ship, _simulation.Events, _config, isActive: ship.Id == State.ActiveShip);
+            _input.Enable();
             SetPaused(false);
             _feedbackUntil = 0;
             RefreshVisuals();
@@ -132,9 +172,31 @@ namespace Thunderbirds.Unity
 
         private void SetPaused(bool paused)
         {
+            if (State.Status != SimStatus.Playing) return;
             _paused = paused;
             _input.SetGameplayEnabled(!paused && State.Status == SimStatus.Playing);
             if (paused) _simulation.ClearInput();
+            if (_overlays != null) { if (paused) _overlays.ShowPause(); else _overlays.Hide(); }
+        }
+
+        private bool HasNext => _campaignIndex >= 0 && _overlays.Catalog != null &&
+            _overlays.Catalog.Get(_campaignIndex + 1) != null && LevelProgress.IsUnlocked(_campaignIndex + 1);
+
+        private void NextLevel()
+        {
+            if (State.Status != SimStatus.Complete || !_overlays.IsReady || !HasNext) return;
+            _data = _overlays.Catalog.Get(++_campaignIndex);
+            _definition = LevelParser.Parse(_data.grid, _config.atlas.pushCapacity);
+            _levelTitle = _data.displayName; _levelHint = _data.hintText;
+            GetComponent<LevelView>().Build(_definition);
+            Restart();
+        }
+
+        private void LeaveLevel(bool select)
+        {
+            _simulation.ClearInput(); _input.Disable();
+            LevelLaunch.Clear(); LevelLaunch.OpenSelection = select;
+            SceneManager.LoadScene("MainMenu");
         }
 
         private void OnApplicationFocus(bool focused)
@@ -144,7 +206,7 @@ namespace Thunderbirds.Unity
 
         private void OnGUI()
         {
-            if (_simulation == null) return;
+            if (_simulation == null || (_overlays != null && _overlays.IsVisible)) return;
             var previousMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
             GUI.Box(new Rect(16, 12, 1248, 100), _levelTitle);
@@ -158,9 +220,7 @@ namespace Thunderbirds.Unity
                 : State.Status == SimStatus.Failed ? (State.LivesLeft <= 0 ? "CRUSHED" : "OUT OF OXYGEN") + " - Restart to retry"
                 : "Dock both ships before oxygen runs out.";
             GUI.Label(new Rect(32, 652, 900, 26), $"Oxygen: {Mathf.CeilToInt(State.OxygenRemaining)}s    |    {outcome}");
-            if (GUI.Button(new Rect(1000, 625, 110, 32), _paused ? "Resume" : "Pause")) SetPaused(!_paused);
-            if (GUI.Button(new Rect(1120, 625, 125, 32), "Restart")) Restart();
-            if (GUI.Button(new Rect(1000, 663, 245, 30), "Main menu")) SceneManager.LoadScene("MainMenu");
+            if (GUI.Button(new Rect(1000, 625, 245, 32), "Pause")) SetPaused(true);
             GUI.matrix = previousMatrix;
         }
 
@@ -175,13 +235,24 @@ namespace Thunderbirds.Unity
         private void OnDestroy()
         {
             if (_simulation != null) _simulation.Events.LevelComplete -= OnLevelComplete;
+            if (_simulation != null) _simulation.Events.LevelFailed -= OnLevelFailed;
             if (_simulation != null) _simulation.Events.MoveRefused -= OnMoveRefused;
             _input?.Dispose();
+            _uiInput?.Dispose();
+            if (_ownedEventSystem != null) Destroy(_ownedEventSystem);
         }
 
         private void OnLevelComplete(LevelComplete completed)
         {
             if (_campaignIndex >= 0) LevelProgress.Complete(_campaignIndex);
+            ShowOutcome(true, FailReason.OutOfOxygen);
+        }
+
+        private void OnLevelFailed(LevelFailed failed) => ShowOutcome(false, failed.Reason);
+        private void ShowOutcome(bool complete, FailReason reason)
+        {
+            _simulation.ClearInput(); _input.Disable();
+            _overlays.ShowOutcome(complete, reason, State.OxygenRemaining, complete && HasNext);
         }
     }
 }

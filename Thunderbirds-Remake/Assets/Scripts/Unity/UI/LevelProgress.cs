@@ -23,6 +23,7 @@ namespace Thunderbirds.Unity
     {
         private static LevelData _pending;
         private static int _index = -1;
+        public static bool OpenSelection { get; set; }
         public static bool Select(LevelCatalog catalog, int index)
         {
             var data = catalog != null ? catalog.Get(index) : null;
@@ -39,6 +40,6 @@ namespace Thunderbirds.Unity
             return data;
         }
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        public static void Clear() { _pending = null; _index = -1; }
+        public static void Clear() { _pending = null; _index = -1; OpenSelection = false; }
     }
 }
