@@ -19,7 +19,7 @@ namespace Thunderbirds.Tests.EditMode
         public void SetUp()
         {
             _saved.Clear();
-            for (var i = 0; i < 5; i++) Preserve(LevelProgress.Key(i));
+            for (var i = 0; i < LevelProgress.LevelCount; i++) Preserve(LevelProgress.Key(i));
             Preserve(DisplaySettings.FullscreenKey);
             _catalog = ScriptableObject.CreateInstance<LevelCatalog>();
             _level = ScriptableObject.CreateInstance<LevelData>();
@@ -57,7 +57,7 @@ namespace Thunderbirds.Tests.EditMode
             Assert.IsTrue(LevelProgress.IsCompleted(0));
             Assert.IsTrue(LevelProgress.IsUnlocked(2));
             Assert.IsFalse(LevelProgress.IsUnlocked(3));
-            Assert.IsFalse(LevelProgress.IsUnlocked(5));
+            Assert.IsFalse(LevelProgress.IsUnlocked(LevelProgress.LevelCount));
         }
         [Test]
         public void Selection_RejectsLockedAndMissing_AndHandoffIsConsumedOnce()
@@ -79,7 +79,7 @@ namespace Thunderbirds.Tests.EditMode
             var view = LevelSelectView.Create(_root.transform, null, _catalog);
             view.Open(caller);
             var buttons = view.GetComponentsInChildren<Button>();
-            Assert.AreEqual(7, buttons.Length);
+            Assert.AreEqual(LevelProgress.LevelCount + 2, buttons.Length);
             Assert.IsTrue(buttons.Single(b => b.name == "L2 Button").interactable);
             Assert.IsFalse(buttons.Single(b => b.name == "L3 Button").interactable);
             Assert.AreEqual("L1\nCOMPLETED", buttons.Single(b => b.name == "L1 Button").GetComponentInChildren<TMPro.TMP_Text>().text);
