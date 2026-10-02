@@ -16,7 +16,7 @@ namespace Thunderbirds.Tests.EditMode
 
             var kestrel = new ShipState(ShipId.Kestrel, 2, 2, new GridPos(1, 1), new GridPos(7, 1));
             var atlas = new ShipState(ShipId.Atlas, 4, 2, new GridPos(3, 1), new GridPos(5, 2));
-            var block = new BlockState(BlockB, new GridPos(8, 1), new[] { new GridPos(0, 0) }, ColourClass.Teal);
+            var block = new BlockState(BlockB, new GridPos(8, 1), new[] { new GridPos(0, 0) }, ColourClass.Light);
 
             return new SimulationState(walls, new[] { kestrel, atlas }, new[] { block }, lives: 3, oxygenSeconds: 90f);
         }

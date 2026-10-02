@@ -30,14 +30,31 @@ namespace Thunderbirds.Unity
         public static float ViewportAspect(int screenWidth, int screenHeight) =>
             screenWidth * LevelViewport.width / (screenHeight * LevelViewport.height);
 
-        /// <summary>Point the camera at the centre of a level whose cell (0, 0) is at <paramref name="levelRoot"/>.</summary>
+        /// <summary>
+        /// The full-screen orthographic size that shows the level inside <see cref="LevelViewport"/>:
+        /// the level fits the viewport band, and the camera sees the HUD strips above and below as well.
+        /// </summary>
+        public static float FullScreenSize(int gridWidth, int gridHeight, float screenAspect) =>
+            OrthographicSize(gridWidth, gridHeight, screenAspect * LevelViewport.width / LevelViewport.height)
+            / LevelViewport.height;
+
+        /// <summary>
+        /// Frame a level whose cell (0, 0) is at <paramref name="levelRoot"/>. The camera always renders the
+        /// whole screen, so every pixel is cleared each frame; a camera limited to the viewport band would leave
+        /// the HUD strips uncleared, and the overlay HUD would smear over its own previous frames there.
+        /// </summary>
         public static void Apply(Camera camera, Transform levelRoot, int gridWidth, int gridHeight, Color background)
         {
             camera.orthographic = true;
-            camera.rect = LevelViewport;
+            camera.rect = new Rect(0f, 0f, 1f, 1f);
             camera.backgroundColor = background;
-            camera.transform.position = levelRoot.TransformPoint(new Vector3(gridWidth * 0.5f, gridHeight * 0.5f, -10f));
-            camera.orthographicSize = OrthographicSize(gridWidth, gridHeight, camera.aspect);
+            camera.orthographicSize = FullScreenSize(gridWidth, gridHeight, camera.aspect);
+
+            // The viewport band is not vertically centred on the screen: move the camera the other way
+            // so the level's centre lands on the band's centre.
+            var bandCentre = (LevelViewport.center.y - 0.5f) * 2f * camera.orthographicSize;
+            var levelCentre = levelRoot.TransformPoint(new Vector3(gridWidth * 0.5f, gridHeight * 0.5f, 0f));
+            camera.transform.position = new Vector3(levelCentre.x, levelCentre.y - bandCentre, levelCentre.z - 10f);
         }
     }
 }

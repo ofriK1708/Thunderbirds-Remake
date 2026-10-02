@@ -98,8 +98,8 @@ namespace Thunderbirds.Unity
         {
             if (config == null || config.kestrel == null || config.atlas == null) return; // keep the built-in text
             if (shipsText != null) shipsText.text = HowToPlayText.Ships(config.kestrel, config.atlas, config.kestrelSpeedRatio);
-            if (blocksText != null) blocksText.text = HowToPlayText.Blocks(config.kestrel, config.atlas);
-            if (survivalText != null) survivalText.text = HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel);
+            if (blocksText != null) blocksText.text = HowToPlayText.Blocks(config.kestrel, config.atlas, config.blockLight, config.blockHeavy, config.blockRed);
+            if (survivalText != null) survivalText.text = HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel, config.respawnGhostSeconds);
         }
 
         private string Binding(string name, string fallback)

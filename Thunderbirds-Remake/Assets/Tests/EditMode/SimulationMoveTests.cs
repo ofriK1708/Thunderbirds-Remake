@@ -110,7 +110,7 @@ namespace Thunderbirds.Tests.EditMode
             Assert.AreEqual(1, Count<MoveRefused>(sim));
             var refused = sim.Events.Log.OfType<MoveRefused>().Single();
             Assert.AreEqual(RefuseReason.TooHeavy, refused.Reason);
-            Assert.AreEqual(ColourClass.Yellow, refused.ChainColour);
+            Assert.AreEqual(ColourClass.Heavy, refused.ChainColour);
             CollectionAssert.AreEqual(new[] { new BlockId('a') }, refused.Chain);
         }
 

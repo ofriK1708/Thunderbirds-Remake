@@ -78,7 +78,7 @@ namespace Thunderbirds.Rules
             MoveActiveShip(dt);         // 2
             UpdateCarryStates();        // 3
             UpdateLoadsAndCrush(dt);    // 4
-            ResolveCrushesAndRespawns(); // 5
+            ResolveCrushesAndRespawns(dt); // 5
             TickOxygen(dt);             // 6
             if (!CheckFailure())        // 7 — failure is checked before success
                 CheckSuccess();         // 8
@@ -227,10 +227,10 @@ namespace Thunderbirds.Rules
         }
 
         /// <summary>5. Crushes cost a life; ghosts materialise when their start area is clear. Issue #14.</summary>
-        private void ResolveCrushesAndRespawns()
+        private void ResolveCrushesAndRespawns(float dt)
         {
             var active = _state.ActiveShip;
-            LivesAndRespawn.Resolve(_state, _events);
+            LivesAndRespawn.Resolve(_state, _config, dt, _events);
             if (_state.ActiveShip != active) ForgetRefusal(); // same as a manual switch
         }
 

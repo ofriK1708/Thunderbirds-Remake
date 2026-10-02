@@ -34,7 +34,7 @@ A level-based rescue puzzle game. Each level is a side-view tomb maze. You pilot
   **Not taking / doing differently:** top-down view (we are **side-view with gravity**); one connected flip-screen tomb (we use **separate single-screen levels**); the equipment loadout screen and points-per-ton economy; fuel (replaced by **oxygen**); save/load of a game position (replaced by **Restart** and **lives**).
 - **Secondary reference:** *Boulder Dash* — real-time play on a logical grid with blocks that fall on their own. We take the "grid rules, continuous feel" model.
 - **Video:** [C64 Thunderbirds gameplay (from 0:58)](https://youtu.be/l7JSYmzShfg?t=58) — the two craft taking turns to shift coloured slabs through the tomb against the clock.
-- **What the screenshot shows us:** the sandstone-and-black palette and coloured slabs directly inspire our tomb look and teal / yellow / red block classes (our teal replaces the original's light blue); the E–F fuel gauge and timer become our single **oxygen bar**; the score panel is dropped (no score in the MVP).
+- **What the screenshot shows us:** the sandstone-and-black palette and coloured slabs directly inspire our tomb look and purple / blue / red block classes (our purple replaces the original's light blue); the E–F fuel gauge and timer become our single **oxygen bar**; the score panel is dropped (no score in the MVP).
 
 ---
 
@@ -79,7 +79,7 @@ stateDiagram-v2
 
 **Blocks**
 - A block is a **rigid shape of cells of any form** (L-shapes included), defined in the level file. **Weight = number of cells.** Blocks never merge, tip or rotate, and each keeps its own clear outline.
-- **Colour class:** **Teal** — weight ≤ Kestrel's `pushCapacity`; **Yellow** — weight ≤ Atlas's `pushCapacity`; **Red** — heavier than Atlas can move. A single block may not be authored red (the level validator rejects it); red appears only when a group is too heavy for any ship.
+- **Colour class:** **Purple** — weight ≤ Kestrel's `pushCapacity`; **Blue** — weight ≤ Atlas's `pushCapacity`; **Red** — heavier than Atlas can move. A single block may not be authored red (the level validator rejects it); red appears only when a group is too heavy for any ship.
 - A block is **supported if any of its bottom cells rests on something** (wall, block or ship). An unsupported block falls one cell per `fallStepSeconds`, taking whatever rests only on it along.
 
 **Push** — moving sideways into blocks in front of the ship
@@ -114,7 +114,7 @@ stateDiagram-v2
 **Load, crush & lives**
 - A ship's **load** is the full weight of every block it carries (including everything stacked on them). A block also held by anything static adds no load. Exception: a block resting only on the two ships (carried by neither) counts fully toward **both** ships' loads.
 - If load > `loadCapacity` (e.g. something fell onto a carried stack), the ship is **Stressed**: it shakes, flashes red, and a countdown ring of `crushGraceSeconds` appears above it. Removing the load in time (scraping it off against a wall, or switching ships and pushing it away) resets the countdown.
-- When the countdown ends, the ship is **crushed**: its carried blocks are released and it loses one of the level's **3 lives**. Only that ship respawns at its start cell; the rest of the level stays as it is. If its start area is occupied, it waits as a **blinking ghost** (not solid, not selectable), control switches to the other ship, and it materialises once the area is clear.
+- When the countdown ends, the ship is **crushed**: its carried blocks are released and it loses one of the level's **3 lives**. Only that ship respawns at its start cell; the rest of the level stays as it is. It always comes back as a **blinking ghost** (not solid, not selectable) for `respawnGhostSeconds`, so the load that crushed it falls through it instead of landing on it again; control switches to the other ship meanwhile. After that time it materialises as soon as its start area is clear.
 - Losing the **last life** fails the level; that ship does not respawn.
 - A materialising ship does **not** take control back — unless the active ship is itself a ghost (both ships were crushed with blocked starts), in which case control goes to whichever ship materialises first.
 
@@ -141,16 +141,23 @@ stateDiagram-v2
 | `pushCapacity` | `ShipConfig` (Kestrel / Atlas) | Max chain weight the ship can push — also sets the colour thresholds | 4 / 8 |
 | `loadCapacity` | `ShipConfig` (Kestrel / Atlas) | Max weight the ship can lift and carry before being stressed | 4 / 8 |
 | `crushGraceSeconds` | `GameConfig` | Time to save a stressed ship — **verify first** that a switch-ships-and-push rescue fits | 3.0 |
+| `respawnGhostSeconds` | `GameConfig` | How long a crushed ship stays a ghost at its start cell: blocks fall through it and it cannot be flown (0 = reappear at once if the start is clear) | 3.0 |
 | `refusalHintSeconds` | `GameConfig` | How long the player pushes into a refused move before the hint popup | 5.0 |
+| `refusalFlashSeconds` | `GameConfig` | How long a refused chain shows the colour of its total weight (red = no ship can push it) | 1.2 |
 | `livesPerLevel` | `GameConfig` | Crushes allowed before the level fails | 3 |
 | `defaultTimeLimitSeconds` | `GameConfig` | Oxygen when a level doesn't set its own | 90 |
 | `timeLimitSeconds` | `LevelData` | Oxygen for this level (0 = use default) | per level |
 | `restartHoldSeconds` | `GameConfig` | Hold time before `Restart` triggers | 0.5 |
 | `switchHighlightSeconds` | `GameConfig` | How long the newly active ship pulses after a switch | 1.5 |
+| `shipTurnSeconds` | `GameConfig` | How long a ship takes to turn around (three frames) | 0.18 |
+| `hintBannerSeconds` | `GameConfig` | How long the level-start hint stays on screen | 6 |
+| `lowOxygenSeconds` | `GameConfig` | Oxygen read-out turns red below this | 15 |
+| `flameBreathAmplitude` / `flameBreathHertz` | `GameConfig` | How far and how fast the thruster flames breathe | 0.18 / 1.3 |
+| `blockStone` / `blockEdgeWidth` / `blockGlow` / `blockGlowWidth` | `GameConfig` | Textured blocks: stone colour, width of the coloured edge, strength and reach of its inward glow | grey / 0.07 / 0.4 / 0.32 |
 | `shipTiltDegrees` / `hoverBobAmplitude` | `GameConfig` | How alive ships look while moving / hovering | 8° / 0.05 u |
 | `showPushPreview` | `GameConfig` + Options | Warning tint before moves *(polish, default off)* | false |
 
-**Where these live:** a `GameConfig` ScriptableObject, two `ShipConfig` ScriptableObjects, and one `LevelData` asset per level — all editable in the Inspector without recompiling.
+**Where these live:** a `GameConfig` ScriptableObject, two `ShipConfig` ScriptableObjects, and one `LevelData` asset per level — all editable in the Inspector without recompiling. They are assets, not scene objects: menu **Thunderbirds → Open Game Settings** selects `Assets/Config/GameConfig.asset`, whose Inspector also shows both ship configs inline.
 
 **Feel target:** a first-time player finishes L1 within 60 s after reading How to Play; holding a direction for 1 s moves Kestrel ~12 cells with no visible stop between cells; in L4 a player who reacts within 2 s can save a stressed ship.
 
@@ -214,7 +221,7 @@ HUD layout (1920 × 1080)
 
 1. **Main Menu** — title *Thunderbirds: Heavy Lift*; buttons **Play**, **How to Play**, **Options**, **Quit**.
 2. **Level Select** — tiles L1–L5: locked (padlock), unlocked, completed (✓); **Back**.
-3. **How to Play** — reachable from Main Menu and Pause. Covers: controls (current device bindings); Kestrel vs Atlas (size, speed, capacities — **read live from `ShipConfig`** so the text never goes stale); what teal / yellow / red mean; carrying and release (the slot example); crush countdown; lives; oxygen. **Back** returns to where it was opened.
+3. **How to Play** — reachable from Main Menu and Pause. Covers: controls (current device bindings); Kestrel vs Atlas (size, speed, capacities — **read live from `ShipConfig`** so the text never goes stale); what purple / blue / red mean; carrying and release (the slot example); crush countdown; lives; oxygen. **Back** returns to where it was opened.
 4. **Game HUD** — top-left: oxygen bar + seconds (turns red under 15 s) and 3 life icons; top-right: active ship portrait + `SwitchShip` hint. In the world: highlight outline on the active ship, plus a bright pulse right after each switch; countdown ring above a stressed ship; blinking ghost for a waiting respawn. At level start: a short hint banner from `LevelData.hintText`.
    **Deliberately absent:** weight numbers on blocks — weight is read from colour, and faint cell seams let the player count cells. Also absent: score and minimap.
 5. **Pause** — **Resume**, **Restart**, **How to Play**, **Options**, **Level Select**, **Main Menu**. Leaving the level asks no confirmation in the MVP (levels are short); a "Leave level?" confirm is polish if playtests show accidental exits.
@@ -229,19 +236,19 @@ HUD layout (1920 × 1080)
 
 ## 6. Art & Audio
 
-**Art direction:** a dark sandstone tomb with bright, readable rescue craft. We use outside sprites but never depend on a sprite made for a specific shape: **every block is built from one cell sprite**. Each cell checks its four neighbours for "part of my block?" and draws a thick dark border only on the sides where it isn't (plus a corner piece where a shape bends inward). Two touching yellow blocks therefore show a clear double line between them; one big yellow block shows only faint seams.
+**Art direction:** a dark sandstone tomb with bright, readable rescue craft. We use outside sprites but never depend on a sprite made for a specific shape: **every block is built from one cell sprite**. Each cell checks its four neighbours for "part of my block?" and draws a thick dark border only on the sides where it isn't (plus a corner piece where a shape bends inward). Two touching blue blocks therefore show a clear double line between them; one big blue block shows only faint seams.
 
-**Palette** — sampled from the C64 original (§2) so the remake reads as its descendant; the one deliberate change is teal for light blocks. Teal is the darkest block colour, so its cell seams are drawn light (white at low opacity) rather than dark. These exact values are the defaults for the colour fields in `GameConfig`.
+**Palette** — sampled from the C64 original (§2) so the remake reads as its descendant; the block colours are a deliberate change: they match our two ships (purple for blocks either ship can push, blue for Atlas-only). In the flat-colour fallback, purple is the darkest block colour, so its cell seams are drawn light (white at low opacity) rather than dark. These exact values are the defaults for the colour fields in `GameConfig`.
 
-![Palette swatches: tomb void, sandstone, sand shadow, block teal, block yellow, block red, dock lit, UI muted, UI text](images/palette.svg)
+![Palette swatches: tomb void, sandstone, sand shadow, block purple, block blue, block red, dock lit, UI muted, UI text](images/palette.svg) *(the swatch image still shows the first palette, teal and yellow; the table below is current)*
 
 | Token | Hex | Use |
 |---|---|---|
 | `tombVoid` | `#101010` | Corridors / background behind the maze |
 | `sandstone` | `#E0A040` | Wall and floor tiles |
 | `sandShadow` | `#785828` | Tile speckle, wall edges, block borders on light tiles |
-| `blockTeal` | `#008080` | Blocks any ship can move (team choice, replacing the original's light blue `#A0A0FF`) |
-| `blockYellow` | `#FFFF40` | Blocks only Atlas can move |
+| `blockLight` | `#A884F3` | Blocks any ship can move (team choice, replacing the original's light blue `#A0A0FF`) |
+| `blockHeavy` | `#3F8CFF` | Blocks only Atlas can move |
 | `blockRed` | `#E04040` | Chain flash when a group is too heavy for any ship; stress flash |
 | `dockLit` | `#40E040` | Dock pads when their ship is docked |
 | `uiMuted` | `#888888` | Locked levels, inactive HUD elements |
@@ -251,11 +258,11 @@ Colour is never the only cue: a block's class can also be read by counting its c
 
 | Asset | Variants / frames | Source & licence | Use |
 |---|---|---|---|
-| Block cell | 1 plain, borderless, near-white tile — tinted per colour class | CC0 tile — chosen with the final art style | All blocks, any shape |
+| Block cell | 1 near-white stone tile, tinted with `blockStone`; the colour class is the edge colour and an inward glow (`GameConfig.blockCell`) | Made by the team with Google Gemini; see `Assets/Art/Tiles/SOURCE.md` | All blocks, any shape |
 | Block border & inner-corner pieces | 1 edge strip + 1 corner | Made by team | Per-block outlines |
-| Wall / floor tiles | 3–4 sandstone variants | CC0 tile pack — chosen with the final art style | Level geometry |
-| Kestrel, Atlas | 1 body + thruster frames each | CC0 ship pack — chosen with the final art style (candidates below) | Ships |
-| Dock pads | 2 sizes (2 × 2, 4 × 2) + lit state | Made by team | Win targets |
+| Wall tiles | 4 sandstone variants, chosen per cell (`GameConfig.wallTiles`); 1 dark brick background tile | Made by the team with Google Gemini; see `Assets/Art/Tiles/SOURCE.md` | Level geometry and backdrop |
+| Kestrel, Atlas | Side, three-quarter and front frame each (`Assets/Art/Ships`); left is the mirror | Made by the team with Google Gemini image generation, in the style of the CC0 Foozle *Void - Fleet Pack 2*; see `Assets/Art/Ships/SOURCE.md` | Ships |
+| Dock markers | The ship's initial (K / A) in a glowing ring; dim and pulsing while empty, bright when docked | Made by team, drawn in code (`DockMarkerView`) | Win targets |
 | UI font | Orbitron | Google Fonts, SIL OFL | All UI |
 | SFX — step hum, bump, land, release, stress creak, crush, dock, switch, UI click | 1–2 each | Kenney audio packs (CC0) / generated with jsfxr | *Polish* |
 | Music — menu + level loop | 1 each | Free Thunderbirds-*style* track, CC0 / CC-BY (credited); possibly our own composition | *Polish* |
@@ -267,7 +274,7 @@ Colour is never the only cue: a block's class can also be read by counting its c
 - **Ship silhouettes fit their footprints** without stretching: Kestrel ≈ square (2 × 2), Atlas ≈ twice as wide as tall (4 × 2), readable at the in-game size.
 - **Ships must not be red-dominant**, so the red stress and "too heavy" flashes stay visible.
 - **One consistent style** for ships, tiles, blocks and docks — no mixing pixel art with vector art.
-- **Block cell tile is plain, borderless and near-white**, so tinting gives true teal / yellow / red and one block of many cells reads as a single piece.
+- **Block cell tile is plain, borderless and near-white**, so tinting gives true purple / blue / red and one block of many cells reads as a single piece.
 
 Candidates under review: *Kenney Space Shooter Extension* (vector, CC0 — licence file checked; Kestrel `spaceShips_003`, Atlas `spaceRockets_002` lying flat) and *Void – Fleet Pack 2 (Nairan)* by Baldur, distributed by Foozle (pixel art, CC0 — licence file checked; Kestrel = Scout/Fighter, Atlas = Torpedo Ship).
 
@@ -358,11 +365,11 @@ graph TD
 
 **Input (#6).** `InputSystem_Actions.inputactions` defines the `Player` actions (`Move`, `SwitchShip`, `Restart`, `Pause`) and the standard `UI` map. `InputReader` owns a private copy so gameplay and menu lifetimes are independent. It converts `Move` into a held four-way direction: a newly pressed axis or sign change wins; changing an analog axis's magnitude alone does not steal priority. Simultaneous new axes choose horizontal deterministically. Press and release callbacks both reach `SetHeldDirection`, preserving short taps. `Restart` uses a Hold interaction (0.5 seconds in the asset, overridden by `GameConfig.restartHoldSeconds` on the private copy). Pausing disables movement and switching, and `ClearInput` discards pending simulation taps; Pause and Restart stay available. Main Menu uses the same asset's UI actions for mouse, keyboard and gamepad navigation.
 
-**Block visuals (#10).** `BlockView` reads the model colour class (derived from weight) and the `GameConfig` palette, and reuses pooled `CellView` objects. Each cell checks only its own block shape for a four-bit neighbour mask. Exposed edges have dark borders and a small gap; shared edges use thin, light seams, including on teal. Missing diagonal cells create inward corner pieces for L shapes. Touching blocks retain separate outlines even when their colours match. The playable preview uses these views and rebinds pooled cells on restart.
+**Block visuals (#10).** `BlockView` reads the model colour class (derived from weight) and the `GameConfig` palette, and reuses pooled `CellView` objects. Each cell checks only its own block shape for a four-bit neighbour mask. Exposed edges have dark borders and a small gap; shared edges use thin, light seams, including on purple. Missing diagonal cells create inward corner pieces for L shapes. Touching blocks retain separate outlines even when their colours match. The playable preview uses these views and rebinds pooled cells on restart.
 
 **Menu flow (#19).** MainMenuView opens a LevelSelectView under its existing Canvas. Five campaign slots read LevelCatalog in L1-L5 order and show unavailable, locked, playable or completed status. Missing assets remain disabled; the separate Sandbox entry loads the preview without affecting campaign progress. LevelProgress persists completion in PlayerPrefs by campaign slot, and completion unlocks the next slot. The `GameManager` singleton carries the selected LevelData across the scene load to LevelView (#18); the playable controller saves progress only after LevelComplete. Back/Cancel restores focus to Play. Options applies and saves fullscreen/windowed mode in standalone builds and restores it at startup; the Editor saves the setting without resizing the editor. Unimplemented audio/push-preview controls are disabled. The existing 1920x1080 CanvasScaler remains in place.
 
-**Level controller.** `LevelView.Start` takes the selected level from `GameManager` (or falls back to `L0_Sandbox` when nothing was selected), builds the walls and docks, and adds a `LevelController` for it. The controller connects the shared `InputReader` to the `Simulation`, ticks it every frame, creates and rebinds the ship and block views, and drives hold-to-restart, pause, the outcome overlays, Next Level and return-to-menu. Campaign levels and the sandbox run the same code; the sandbox has campaign index -1, so it never saves progress or offers Next Level. (Until #18 this class was the temporary `SandboxPreviewController`.) The HUD is still placeholder `OnGUI` text until #16. An explicitly wired Play event on the main menu overrides the Level Select fallback.
+**Level controller.** `LevelView.Start` takes the selected level from `GameManager` (or falls back to `L0_Sandbox` when nothing was selected), builds the walls and docks, and adds a `LevelController` for it. The controller connects the shared `InputReader` to the `Simulation`, ticks it every frame, creates and rebinds the ship and block views, and drives hold-to-restart, pause, the outcome overlays, Next Level and return-to-menu. Campaign levels and the sandbox run the same code; the sandbox has campaign index -1, so it never saves progress or offers Next Level. (Until #18 this class was the temporary `SandboxPreviewController`.) An explicitly wired Play event on the main menu overrides the Level Select fallback.
 
 ```
 ################################
@@ -375,7 +382,7 @@ graph TD
 #11...#....#............d..2222#
 ################################
 ```
-*(`b` = 4-cell L resting on a ledge — teal; `c` = 8-cell block carried by Atlas — yellow; `d` = 3-cell L on the floor — teal.)*
+*(`b` = 4-cell L resting on a ledge — purple; `c` = 8-cell block carried by Atlas — blue; `d` = 3-cell L on the floor — purple.)*
 
 **Why text, not scene-built or Tilemap levels:** (1) a block is "every cell with the same letter", which gives arbitrary rigid shapes and their weight directly — a Tilemap knows only tiles, not which tiles form one block; (2) the rules layer and its Edit Mode tests parse levels without loading a scene, so every level can be validated by a test; (3) `.unity` files can't be merged, so scene-built levels would let only the scene owner design them — text diffs cleanly and both teammates can author levels; (4) Restart and respawn rebuild the grid from the immutable `LevelDefinition` without a scene reload; (5) the polish level editor only has to write the same format. The cost — no visual editing — is covered by readable parser errors and the Inspector grid preview (polish #11).
 
@@ -397,11 +404,15 @@ graph TD
 
 **Ship feedback (#17).** ShipView owns the body tint and visual offsets, driven by simulation events. Ghost transparency takes priority over stress red/shake; stress takes priority over the switch pulse. Switch pulses preserve opacity for manual and automatic switches. A refused move adds a short directional body bump, without moving the model or interrupting its slide; ghosts suppress this bump. Respawn clears transient effects, and rebinding on restart restores the original sprite tint and replaces event subscriptions. The sandbox supplies initial ship colours and active state rather than overwriting feedback each frame.
 
-**Teaching levels (#22).** The catalog starts with L1 First Flight (90 seconds) and L2 Shared Strength (120 seconds); Sandbox remains separate. L1 has no blocks or hazards: move Kestrel right to its small dock, switch, and move Atlas right and up to its wide dock. L2 has a two-cell shaft for Kestrel, a four-cell teal block on the upper route and a six-cell yellow block on Atlas's lower route. Kestrel starts ahead of Atlas and must vacate the lower corridor. Its attempt to push yellow is safely refused; it can retreat and take the shaft to push teal. Atlas then pushes yellow to reach its dock. Both docks are required. The temporary playable UI displays each level's title and hint until HudView arrives. Automated solution tests include reading/thinking time and check oxygen margin; the first-time-player 60-second target still needs a human playtest.
+**Teaching levels (#22).** The catalog starts with L1 First Flight (90 seconds) and L2 Shared Strength (120 seconds); Sandbox remains separate. L1 has no blocks or hazards: move Kestrel right to its small dock, switch, and move Atlas right and up to its wide dock. L2 has a two-cell shaft for Kestrel, a four-cell purple block on the upper route and a six-cell blue block on Atlas's lower route. Kestrel starts ahead of Atlas and must vacate the lower corridor. Its attempt to push blue is safely refused; it can retreat and take the shaft to push purple. Atlas then pushes blue to reach its dock. Both docks are required. The temporary playable UI displays each level's title and hint until HudView arrives. Automated solution tests include reading/thinking time and check oxygen margin; the first-time-player 60-second target still needs a human playtest.
 
 **Level overlays (#21).** The editable `Resources/LevelOverlays.prefab` contains Pause, Failed and Complete panels and nested help/options prefabs. The playable controller pauses on focus loss and connects Resume, Restart, Retry, Level Select and Main Menu. Outcome events freeze gameplay immediately, hold for 0.5 seconds, reveal the result, then lock buttons for another 0.5 seconds and until held submit/click is released. Complete saves campaign progress and shows oxygen remaining; Next Level is disabled for Sandbox and when the next catalog entry is absent. Next Level rebuilds the model and visuals in the current scene. Level Select returns directly to mission selection through a one-shot menu handoff. The production GameManager can reuse the overlay callbacks when #18 arrives.
 
-**Scene flow and camera (#18).** `GameManager` is created on first use and marked `DontDestroyOnLoad`, so neither scene contains it. It holds the selected level (handed to `LevelView` once), the "reopen Level Select" flag used when leaving a level, and is the only caller of `SceneManager.LoadScene` (`PlayLevel`, `PlaySandbox`, `ReturnToMenu`). Unlock progress is read and written through it; `LevelProgress` is the stateless `PlayerPrefs` store behind it. Restart, respawn and Next Level never go through `GameManager`: they rebuild the rules model inside `Game.unity`. `CameraFit` sizes the orthographic camera every frame from the level size and the current aspect ratio — the tighter of "fit the height" and "fit the width", plus a 0.75-cell margin — so a window resize or any resolution keeps the whole level visible, centred, with tomb-void bars on the spare axis. The level is drawn in the middle 66 % of the screen height; the strips above and below belong to the HUD.
+**Scene flow and camera (#18).** `GameManager` is created on first use and marked `DontDestroyOnLoad`, so neither scene contains it. It holds the selected level (handed to `LevelView` once), the "reopen Level Select" flag used when leaving a level, and is the only caller of `SceneManager.LoadScene` (`PlayLevel`, `PlaySandbox`, `ReturnToMenu`). Unlock progress is read and written through it; `LevelProgress` is the stateless `PlayerPrefs` store behind it. Restart, respawn and Next Level never go through `GameManager`: they rebuild the rules model inside `Game.unity`. `CameraFit` sizes the orthographic camera every frame from the level size and the current aspect ratio — the tighter of "fit the height" and "fit the width", plus a 0.75-cell margin — so a window resize or any resolution keeps the whole level visible, centred, with tomb-void bars on the spare axis. The level is placed in the middle 66 % of the screen height; the strips above and below belong to the HUD. The camera itself always renders the whole screen (the band is reached by camera size and position, not by a camera viewport rect), so the HUD strips are cleared every frame.
+
+**HUD (#16).** `HudView` is built in code by `LevelController` (no scene or prefab) on a Screen Space - Overlay canvas below the pause / outcome overlays. It reads the simulation state every frame and decides nothing: oxygen bar and whole seconds (rounded up, red below 15 s), one life icon per `livesPerLevel`, the level name, the active ship with its portrait (a fixed side view, not the live sprite) and the `SwitchShip` binding for the device used last, hold-to-restart progress, and a bottom banner that shows `LevelData.hintText` for 6 s at level start and after each Restart, and short refusal messages after that. The crush countdown ring is a small world-space canvas parented to each `ShipView`, shown only while that ship is stressed and drained from `CrushSecondsLeft / crushGraceSeconds`. The small calculations live in `HudModel` so they are unit-tested. There are no weight numbers on blocks.
+
+**Ship art.** Each `ShipConfig` has three optional sprites (side, three-quarter, front), all drawn facing right with a flat cargo deck on top. `ShipView` scales the side sprite uniformly to the largest size that fits the ship's footprint (never stretched), centres it sideways and puts the top of the sprite on the top edge of the footprint, so carried blocks sit on the deck. A ship faces the way it last moved sideways (vertical moves keep the facing; left is the mirrored sprite), and turning around plays three-quarter, front, three-quarter over 0.18 s. With no sprites assigned the old placeholder rectangle is used. Each frame has a separate flame layer behind the hull that breathes: it stretches and shrinks downward from the nozzles (`flameBreathAmplitude`, `flameBreathHertz`), a little longer while the ship is flying. Walls, block fills and the backdrop also take optional sprites from `GameConfig` (`wallTiles`, `blockCell`, `backgroundTile`); without them the flat palette colours are used. With a block texture set, a block is drawn as grey stone and its colour class (purple / blue / red) is carried by the outside edge and a soft glow fading inward from it, instead of painting the whole block; cell seams are thin dark lines. Without a texture the old flat look is used: colour fill, dark outline. Both are drawn by `CellView`.
 
 A full input → tick → events → views trace of one move is in [`move-flow.md`](move-flow.md).
 
@@ -427,7 +438,7 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 - [ ] `MainMenu` and `Game` scenes; Main Menu, Level Select (unlocking, `PlayerPrefs`), How to Play (from menu and pause), Options (fullscreen), Pause, Failed, Complete
 - [ ] Kestrel 2 × 2 and Atlas 4 × 2; instant switching with a highlight pulse on the new active ship; `kestrelSpeedRatio`
 - [ ] Held-direction grid movement with smooth back-to-back steps, tilt and hover bob
-- [ ] Blocks of any rigid shape from the text grid; weight = cells; teal / yellow / red classes; one-sprite cells with clear per-block borders
+- [ ] Blocks of any rigid shape from the text grid; weight = cells; purple / blue / red classes; one-sprite cells with clear per-block borders
 - [ ] Push chains, lift, Carried state, release on obstacles, falls-first gravity
 - [ ] Load, Stressed state (shake, red flash, world-space countdown ring), crush
 - [ ] 3 lives per level, ghost respawn at start cell, level failure on last life
@@ -478,3 +489,11 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 | v0.1.4 | 2026-09-26 | §3 Push: holding into a refusal bumps once and retries silently; `refusalHintSeconds` hint popup; blocked reported before too heavy. §7: `RefusalHint` event, `MoveRefused` carries the chain colour (#7) |
 | v0.1.5 | 2026-09-30 | §3 Load, crush & lives: no respawn after the last life; who gets control when a ghost materialises (#14) |
 | v0.1.6 | 2026-10-02 | §7: `GameManager` singleton owns level selection, progress access and scene changes (replaces the static `LevelLaunch`); `CameraFit` camera sizing (#18); `SandboxPreviewController` renamed `LevelController` |
+| v0.1.7 | 2026-10-02 | §7: `HudView` / `HudModel` replace the placeholder `OnGUI` HUD; camera renders full screen and frames the level inside the HUD band (#16) |
+| v0.1.8 | 2026-10-02 | §6/§7: ship sprites with facing and turn frames; L4 "Rockfall" level (falls and the crush countdown, #23) |
+| v0.1.9 | 2026-10-02 | §3: respawn protection — a crushed ship is a ghost for `respawnGhostSeconds`, so its load falls through instead of crushing it again; turn, hint and low-oxygen timings moved into `GameConfig`; Game Settings inspector |
+| v0.1.10 | 2026-10-02 | §6: docks are marked with the ship's initial in a glowing ring instead of a colour block; HUD portrait is a fixed picture |
+| v0.1.11 | 2026-10-02 | §6/§7: wall, block and background tile art; breathing thruster flames; docks are only the letter marker |
+| v0.1.12 | 2026-10-02 | §6: textured blocks are stone with the colour class on a glowing edge, not a painted fill |
+| v0.1.13 | 2026-10-02 | Block classes renamed Light / Heavy / TooHeavy and recoloured to match the ships: purple = either ship, blue = Atlas only, red = neither (was teal / yellow / red); Kestrel art redrawn to fill its 2 x 2 footprint |
+| v0.1.14 | 2026-10-02 | §3 Push feedback now implemented in the views: a refused chain flashes the colour of its total weight; the message only suggests Atlas when Atlas could push it; `RefusalHint` shows a hint in the HUD |

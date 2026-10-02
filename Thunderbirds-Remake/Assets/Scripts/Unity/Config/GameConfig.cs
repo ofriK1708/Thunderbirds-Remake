@@ -1,5 +1,6 @@
 using Thunderbirds.Rules;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Thunderbirds.Unity
 {
@@ -27,6 +28,15 @@ namespace Thunderbirds.Unity
         [Tooltip("Time to save a stressed ship before it is crushed.")]
         [Min(0.1f)] public float crushGraceSeconds = 3f;
 
+        [Tooltip("After a crush the ship is a ghost for at least this long: blocks fall through it and it cannot be flown. 0 = reappear at once.")]
+        [Min(0f)] public float respawnGhostSeconds = 3f;
+
+        [Tooltip("Keep pushing into a refused move this long and a hint appears.")]
+        [Min(0f)] public float refusalHintSeconds = 5f;
+
+        [Tooltip("How long a refused chain of blocks shows the colour of its total weight (red = no ship can push it).")]
+        [Min(0f)] public float refusalFlashSeconds = 1.2f;
+
         [Header("Level")]
         [Min(1)] public int livesPerLevel = 3;
 
@@ -36,6 +46,46 @@ namespace Thunderbirds.Unity
         [Header("Input & feedback")]
         [Min(0f)] public float restartHoldSeconds = 0.5f;
         [Min(0f)] public float switchHighlightSeconds = 1.5f;
+
+        [Tooltip("How long a ship takes to turn around (three frames).")]
+        [Min(0f)] public float shipTurnSeconds = 0.18f;
+
+        [Tooltip("How long the level-start hint stays on screen.")]
+        [Min(0f)] public float hintBannerSeconds = 6f;
+
+        [Tooltip("The oxygen read-out turns red below this many seconds.")]
+        [Min(0f)] public float lowOxygenSeconds = 15f;
+
+        [Tooltip("How far the thruster flames stretch and shrink as they breathe (0 = still, 0.2 = 20 %).")]
+        [Range(0f, 0.6f)] public float flameBreathAmplitude = 0.18f;
+
+        [Tooltip("Flame breaths per second.")]
+        [Min(0f)] public float flameBreathHertz = 1.3f;
+
+        [Header("Art (leave empty for flat colours)")]
+        [Tooltip("Wall tiles. Each wall cell picks one, always the same one for the same cell.")]
+        public Sprite[] wallTiles;
+
+        [Tooltip("The stone texture of one block cell. Must be near-white: it is tinted with Block Stone.")]
+        public Sprite blockCell;
+
+        [Tooltip("Colour of the stone that textured blocks are made of. The colour class is shown on the edge and its glow.")]
+        public Color blockStone = new Color(0.50f, 0.48f, 0.50f, 1f);
+
+        [Tooltip("Width of a textured block's coloured edge, in cells.")]
+        [Range(0.02f, 0.2f)] public float blockEdgeWidth = 0.07f;
+
+        [Tooltip("How strongly the edge colour glows inward over the stone (0 = no glow).")]
+        [Range(0f, 1f)] public float blockGlow = 0.4f;
+
+        [Tooltip("How far the glow reaches into the block, in cells.")]
+        [Range(0.05f, 0.5f)] public float blockGlowWidth = 0.32f;
+
+        [Tooltip("Tiled behind the level.")]
+        public Sprite backgroundTile;
+
+        [Tooltip("How many cells wide one background tile is drawn.")]
+        [Min(0.25f)] public float backgroundTileCells = 2f;
         public float shipTiltDegrees = 8f;
         public float hoverBobAmplitude = 0.05f;
         public bool showPushPreview;
@@ -44,8 +94,10 @@ namespace Thunderbirds.Unity
         public Color tombVoid = Hex(0x101010);
         public Color sandstone = Hex(0xE0A040);
         public Color sandShadow = Hex(0x785828);
-        public Color blockTeal = Hex(0x008080);
-        public Color blockYellow = Hex(0xFFFF40);
+        [Tooltip("Blocks either ship can push (matches Kestrel).")]
+        [FormerlySerializedAs("blockTeal")] public Color blockLight = Hex(0xA884F3);
+        [Tooltip("Blocks only Atlas can push (matches Atlas).")]
+        [FormerlySerializedAs("blockYellow")] public Color blockHeavy = Hex(0x3F8CFF);
         public Color blockRed = Hex(0xE04040);
         public Color dockLit = Hex(0x40E040);
         public Color uiMuted = Hex(0x888888);
@@ -63,6 +115,8 @@ namespace Thunderbirds.Unity
                 KestrelSpeedRatio = kestrelSpeedRatio,
                 FallStepSeconds = fallStepSeconds,
                 CrushGraceSeconds = crushGraceSeconds,
+                RespawnGhostSeconds = respawnGhostSeconds,
+                RefusalHintSeconds = refusalHintSeconds,
                 KestrelPushCapacity = kestrel.pushCapacity,
                 KestrelLoadCapacity = kestrel.loadCapacity,
                 AtlasPushCapacity = atlas.pushCapacity,
@@ -78,8 +132,8 @@ namespace Thunderbirds.Unity
         {
             switch (colour)
             {
-                case ColourClass.Teal: return blockTeal;
-                case ColourClass.Yellow: return blockYellow;
+                case ColourClass.Light: return blockLight;
+                case ColourClass.Heavy: return blockHeavy;
                 default: return blockRed;
             }
         }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using UnityEngine;
 
 namespace Thunderbirds.Unity
 {
@@ -19,19 +20,21 @@ namespace Thunderbirds.Unity
             $"Pushes {atlas.pushCapacity}, carries {atlas.loadCapacity} cells.\n\n" +
             "Both ships hover when stopped.";
 
-        public static string Blocks(ShipConfig kestrel, ShipConfig atlas) =>
-            $"<color=#25BCBC>TEAL</color>     up to {kestrel.pushCapacity}: either ship\n" +
-            $"<color=#FFFF40>YELLOW</color>  up to {atlas.pushCapacity}: Atlas only\n" +
-            $"<color=#E04040>RED</color>       over {atlas.pushCapacity}: too heavy\n\n" +
+        /// <summary>The three weight classes, each word in its own edge colour from GameConfig.</summary>
+        public static string Blocks(ShipConfig kestrel, ShipConfig atlas, Color light, Color heavy, Color tooHeavy) =>
+            $"<color=#{ColorUtility.ToHtmlStringRGB(light)}>LIGHT</color>  up to {kestrel.pushCapacity}: either ship\n" +
+            $"<color=#{ColorUtility.ToHtmlStringRGB(heavy)}>HEAVY</color>  up to {atlas.pushCapacity}: Atlas only\n" +
+            $"<color=#{ColorUtility.ToHtmlStringRGB(tooHeavy)}>TOO HEAVY</color>  over {atlas.pushCapacity}: no ship\n\n" +
+            "The edge colour shows the class.\n" +
             "Weight = number of occupied cells.\n" +
             "A push counts the whole chain,\nincluding blocks resting on top.\n" +
-            "Unsupported blocks fall.\nBlocks never rotate or merge.";
+            "Unsupported blocks fall.";
 
-        public static string Survival(float crushGraceSeconds, int lives) =>
+        public static string Survival(float crushGraceSeconds, int lives, float respawnGhostSeconds) =>
             "Overloaded? A crush ring gives you\n" +
             $"{Seconds(crushGraceSeconds)} s: release the load, or switch\nships and push it away.\n\n" +
             $"A crush costs one of your {lives} {(lives == 1 ? "life" : "lives")}.\n" +
-            "A blinking ghost waits for its start\narea to clear before returning.\n\n" +
+            $"It returns as a ghost for {Seconds(respawnGhostSeconds)} s:\nblocks fall through, it cannot move.\n\n" +
             "No lives or no oxygen = level failed.";
 
         private static string SpeedLine(float ratio)

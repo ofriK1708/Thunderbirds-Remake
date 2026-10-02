@@ -71,12 +71,12 @@ namespace Thunderbirds.Rules
             return new SimulationState((bool[,])_walls.Clone(), new[] { kestrel, atlas }, blocks, lives, oxygenSeconds);
         }
 
-        /// <summary>GDD §3: teal = Kestrel can push it, yellow = only Atlas can, red = neither.</summary>
+        /// <summary>GDD §3: Light = Kestrel can push it, Heavy = only Atlas can, TooHeavy = neither.</summary>
         public static ColourClass ColourOf(int weight, SimulationConfig config)
         {
-            if (weight <= config.KestrelPushCapacity) return ColourClass.Teal;
-            if (weight <= config.AtlasPushCapacity) return ColourClass.Yellow;
-            return ColourClass.Red;
+            if (weight <= config.KestrelPushCapacity) return ColourClass.Light;
+            if (weight <= config.AtlasPushCapacity) return ColourClass.Heavy;
+            return ColourClass.TooHeavy;
         }
     }
 }

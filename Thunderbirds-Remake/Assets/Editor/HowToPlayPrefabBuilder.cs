@@ -15,6 +15,7 @@ namespace Thunderbirds.Editor
         private const string ConfigPath = "Assets/Config/GameConfig.asset";
         private const string ActionsPath = "Assets/InputSystem_Actions.inputactions";
         private static TMP_FontAsset font;
+        private static Color blockColour; // the example block in the "use the walls" diagram
         private static readonly Color Paper = Hex("FFFFEC");
         private static readonly Color Gold = Hex("E0A040");
 
@@ -27,6 +28,7 @@ namespace Thunderbirds.Editor
             if (config == null || config.kestrel == null || config.atlas == null)
                 throw new InvalidOperationException($"{ConfigPath} with both ShipConfigs is required.");
             var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(ActionsPath);
+            blockColour = config.blockLight;
             var root = new GameObject("HowToPlayPanel", typeof(RectTransform), typeof(Canvas),
                 typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(HowToPlayView));
             root.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -56,7 +58,7 @@ namespace Thunderbirds.Editor
 
             var blocks = Card(content, "03  READ THE BLOCKS", 580, 163);
             var blocksText = Label(blocks, "Weights",
-                HowToPlayText.Blocks(config.kestrel, config.atlas),
+                HowToPlayText.Blocks(config.kestrel, config.atlas, config.blockLight, config.blockHeavy, config.blockRed),
                 21, 0, -23, 486, 249, Paper);
 
             var carry = Card(content, "04  CARRY & RELEASE", -580, -192);
@@ -71,11 +73,11 @@ namespace Thunderbirds.Editor
             Diagram(example, 0, new[] { "..........", "...LLLLL..", "...L.KK...", "..#L#KK...", "..#.#....." });
             Diagram(example, 162, new[] { "..........", "...LLLLL..", "...L...KK.", "..#L#..KK.", "..#.#....." });
             Label(example, "Steps", "1. CARRY       2. LOWER       3. RELEASE", 16, 0, -72, 486, 38, Gold, TextAlignmentOptions.Center);
-            Label(example, "Legend", "Teal: block    Light: ship    Gold: wall", 16, 0, -123, 490, 30, Paper, TextAlignmentOptions.Center);
+            Label(example, "Legend", "Colour: block    Light: ship    Gold: wall", 16, 0, -123, 490, 30, Paper, TextAlignmentOptions.Center);
 
             var survival = Card(content, "06  KEEP THE RESCUE ALIVE", 580, -192);
             var survivalText = Label(survival, "Danger",
-                HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel),
+                HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel, config.respawnGhostSeconds),
                 21, 0, -23, 486, 249, Paper);
 
             var backRect = Rect("Back Button", content, 0, -444, 310, 66);
@@ -154,7 +156,7 @@ namespace Thunderbirds.Editor
                 if (cell == '.') continue;
                 var tile = Rect("Cell", diagram, (column - 4.5f) * 14, (2 - row) * 14, 13, 13);
                 var image = tile.gameObject.AddComponent<Image>();
-                image.color = cell == 'L' ? Hex("008080") : cell == '#' ? Gold : Paper;
+                image.color = cell == 'L' ? blockColour : cell == '#' ? Gold : Paper;
                 image.raycastTarget = false;
             }
         }

@@ -24,13 +24,13 @@ namespace Thunderbirds.Unity
         private Sprite _blockSprite;
         private Material _blockMaterial;
         private bool _paused;
-        private string _feedback = "Move beside a block and push left or right.";
-        private float _feedbackUntil;
         private string _levelTitle;
         private string _levelHint;
         private LevelDefinition _definition;
         private LevelData _data;
         private LevelOverlayView _overlays;
+        private HudView _hud;
+        private LevelView _levelView;
         private GameObject _ownedEventSystem;
         private InputReader _uiInput;
 
@@ -53,9 +53,11 @@ namespace Thunderbirds.Unity
                 () => _definition.CreateState(config.ToSimulationConfig(), config.livesPerLevel, config.OxygenFor(_data)),
                 config.ToSimulationConfig);
             _simulation.Events.MoveRefused += OnMoveRefused;
+            _simulation.Events.RefusalHint += OnRefusalHint;
             _simulation.Events.LevelComplete += OnLevelComplete;
             _simulation.Events.LevelFailed += OnLevelFailed;
             _camera = Camera.main;
+            _levelView = GetComponent<LevelView>();
             _blockSprite = cellPrefab.sprite;
             _blockMaterial = cellPrefab.sharedMaterial;
 
@@ -73,15 +75,27 @@ namespace Thunderbirds.Unity
                 var body = Instantiate(cellPrefab, view.transform);
                 body.name = "Body";
                 body.sortingLayerName = "Ships";
-                body.transform.localScale = new Vector3(ship.Width - 0.12f, ship.Height - 0.12f, 1);
-                body.color = ship.Id == ShipId.Kestrel ? new Color(0.35f, 0.8f, 1f) : new Color(1f, 0.65f, 0.3f);
+                var art = ship.Id == ShipId.Kestrel ? config.kestrel : config.atlas;
+                if (art != null && art.sideSprite != null)
+                    view.SetArt(art.sideSprite, art.turnSprite, art.frontSprite,
+                        art.sideFlame, art.turnFlame, art.frontFlame);
+                else
+                {
+                    // Placeholder rectangle until the ShipConfig has sprites.
+                    body.transform.localScale = new Vector3(ship.Width - 0.12f, ship.Height - 0.12f, 1);
+                    body.color = PlaceholderColour(ship.Id);
+                }
                 view.Bind(ship, _simulation.Events, config, body, ship.Id == State.ActiveShip);
                 _ships.Add(ship.Id, view);
             }
             CreateActions();
             CreateOverlays();
+            CreateHud();
             RefreshVisuals();
         }
+
+        private static Color PlaceholderColour(ShipId ship) =>
+            ship == ShipId.Kestrel ? new Color(0.35f, 0.8f, 1f) : new Color(1f, 0.65f, 0.3f);
 
         private void CreateActions()
         {
@@ -109,6 +123,23 @@ namespace Thunderbirds.Unity
             _overlays.Bind(() => SetPaused(false), Restart, NextLevel, () => LeaveLevel(true), () => LeaveLevel(false), module);
         }
 
+        private void CreateHud()
+        {
+            var font = _overlays.GetComponentInChildren<TMPro.TMP_Text>(true)?.font; // same face as the menus
+            _hud = HudView.Create(transform, font, _config, InputSystem.actions);
+            foreach (var ship in State.Ships)
+            {
+                // A fixed picture for the HUD: the side view, never the live frame (which turns, flips and flashes).
+                var art = ship.Id == ShipId.Kestrel ? _config.kestrel : _config.atlas;
+                var body = _ships[ship.Id].Body;
+                var hasArt = art != null && art.sideSprite != null;
+                _hud.AttachShip(ship.Id, _ships[ship.Id].transform, ship.Height,
+                    !hasArt ? body.sprite : art.portraitSprite != null ? art.portraitSprite : art.sideSprite,
+                    hasArt ? Color.white : PlaceholderColour(ship.Id));
+            }
+            _hud.Bind(() => State, _levelTitle, _levelHint);
+        }
+
         private void TogglePause()
         {
             if (State.Status != SimStatus.Playing) return;
@@ -121,6 +152,8 @@ namespace Thunderbirds.Unity
             if (_simulation == null) return;
             if (!_paused) _simulation.Tick(Time.deltaTime);
             _input.SetGameplayEnabled(!_paused && State.Status == SimStatus.Playing);
+            _hud.SetRestartProgress(RestartProgress);
+            _hud.Tick(_paused ? 0f : Time.deltaTime); // the hint and messages wait while paused
             RefreshVisuals();
         }
 
@@ -128,17 +161,40 @@ namespace Thunderbirds.Unity
         {
             foreach (var block in State.Blocks)
                 _blocks[block.Id].SyncPosition(block);
+            foreach (var ship in State.Ships)
+                _levelView.SetDockLit(ship.Id, !ship.IsGhost && ship.Position == ship.Dock);
             if (_camera != null) CameraFit.Apply(_camera, transform, State.Width, State.Height, _config.tombVoid);
         }
 
         private void OnMoveRefused(MoveRefused refused)
         {
-            _feedback = refused.Reason == RefuseReason.FallWonTie
-                ? "A falling block got there first. Try moving again."
-                : refused.Reason == RefuseReason.TooHeavy
-                ? "Too heavy for this ship. Switch to Atlas."
-                : "Blocked. Try another direction. Lifting is not available yet.";
-            _feedbackUntil = Time.unscaledTime + 3f;
+            _hud.ShowMessage(RefusalMessage(refused.Ship, refused.Reason, refused.ChainColour), 3f);
+            if (refused.Reason != RefuseReason.TooHeavy) return;
+            // The whole chain shows the class of its total weight: red when no ship could move it (GDD §3 Push).
+            var colour = _config.ColourOf(refused.ChainColour);
+            foreach (var id in refused.Chain)
+                if (_blocks.TryGetValue(id, out var view)) view.Flash(colour, _config.refusalFlashSeconds);
+        }
+
+        /// <summary>The player kept pushing into a refusal: say what would work instead.</summary>
+        private void OnRefusalHint(RefusalHint hint)
+        {
+            var message = hint.Reason == RefuseReason.TooHeavy
+                ? "Still too heavy. Push fewer blocks at once, or move one out of the row first."
+                : "Still blocked. Something solid is behind it: try from the other side.";
+            _hud.ShowMessage(message, 5f);
+        }
+
+        /// <summary>
+        /// What to tell the player after a refused move. <paramref name="chainColour"/> is the class of the whole
+        /// chain's weight, so "try Atlas" is only said when Atlas really could push it.
+        /// </summary>
+        public static string RefusalMessage(ShipId ship, RefuseReason reason, ColourClass chainColour)
+        {
+            if (reason == RefuseReason.FallWonTie) return "A falling block got there first. Try again.";
+            if (reason != RefuseReason.TooHeavy) return "Blocked. Try another direction.";
+            if (chainColour == ColourClass.TooHeavy) return "Too heavy for either ship. Push fewer blocks at once.";
+            return ship == ShipId.Kestrel ? "Too heavy for Kestrel. Try Atlas." : "Too heavy for Atlas.";
         }
 
         private void Restart()
@@ -161,7 +217,7 @@ namespace Thunderbirds.Unity
                 _ships[ship.Id].Bind(ship, _simulation.Events, _config, isActive: ship.Id == State.ActiveShip);
             _input.Enable();
             SetPaused(false);
-            _feedbackUntil = 0;
+            _hud.Bind(() => State, _levelTitle, _levelHint); // new state object, hint shown again
             RefreshVisuals();
         }
 
@@ -198,26 +254,6 @@ namespace Thunderbirds.Unity
             if (!focused && _simulation != null) SetPaused(true);
         }
 
-        private void OnGUI()
-        {
-            if (_simulation == null || (_overlays != null && _overlays.IsVisible)) return;
-            var previousMatrix = GUI.matrix;
-            GUI.matrix = Matrix4x4.Scale(new Vector3(Screen.width / 1280f, Screen.height / 720f, 1));
-            GUI.Box(new Rect(16, 12, 1248, 100), _levelTitle);
-            GUI.Label(new Rect(32, 38, 800, 25), $"Active ship: {State.ActiveShip}    |    {(_paused ? "PAUSED" : "Move and push blocks to test the level")}");
-            if (RestartProgress > 0f)
-                GUI.Label(new Rect(920, 38, 320, 25), $"Hold to restart: {RestartProgress:P0}");
-            GUI.Label(new Rect(32, 67, 1200, 30), "WASD / arrows: move    Space / Tab: switch    Hold R: restart    Esc: pause    |    Gamepad: stick / D-pad, A, View, Menu");
-            GUI.Box(new Rect(16, 610, 1248, 98), "");
-            GUI.Label(new Rect(32, 620, 930, 26), Time.unscaledTime < _feedbackUntil ? _feedback : _levelHint);
-            var outcome = State.Status == SimStatus.Complete ? "RESCUE COMPLETE - Restart to play again"
-                : State.Status == SimStatus.Failed ? (State.LivesLeft <= 0 ? "CRUSHED" : "OUT OF OXYGEN") + " - Restart to retry"
-                : "Dock both ships before oxygen runs out.";
-            GUI.Label(new Rect(32, 652, 900, 26), $"Oxygen: {Mathf.CeilToInt(State.OxygenRemaining)}s    |    {outcome}");
-            if (GUI.Button(new Rect(1000, 625, 245, 32), "Pause")) SetPaused(true);
-            GUI.matrix = previousMatrix;
-        }
-
         private void OnEnable() => _input?.Enable();
 
         private void OnDisable()
@@ -231,6 +267,7 @@ namespace Thunderbirds.Unity
             if (_simulation != null) _simulation.Events.LevelComplete -= OnLevelComplete;
             if (_simulation != null) _simulation.Events.LevelFailed -= OnLevelFailed;
             if (_simulation != null) _simulation.Events.MoveRefused -= OnMoveRefused;
+            if (_simulation != null) _simulation.Events.RefusalHint -= OnRefusalHint;
             _input?.Dispose();
             _uiInput?.Dispose();
             if (_ownedEventSystem != null) Destroy(_ownedEventSystem);

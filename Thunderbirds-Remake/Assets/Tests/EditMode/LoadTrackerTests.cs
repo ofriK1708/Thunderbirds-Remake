@@ -20,7 +20,7 @@ namespace Thunderbirds.Tests.EditMode
 
         private static BlockState Block(char id, int x, int y, int width) =>
             new BlockState(new BlockId(id), new GridPos(x, y),
-                Enumerable.Range(0, width).Select(dx => new GridPos(dx, 0)).ToArray(), ColourClass.Teal);
+                Enumerable.Range(0, width).Select(dx => new GridPos(dx, 0)).ToArray(), ColourClass.Light);
 
         private static SimulationState State(params BlockState[] blocks)
         {

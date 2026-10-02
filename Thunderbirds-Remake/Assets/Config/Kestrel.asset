@@ -16,3 +16,10 @@ MonoBehaviour:
   displayName: Kestrel
   pushCapacity: 4
   loadCapacity: 4
+  sideSprite: {fileID: 21300000, guid: 0a600ebc9e2d4fe9b878c5d697da357a, type: 3}
+  turnSprite: {fileID: 21300000, guid: 1de2ee6ca6d4495a815a5c2882dd2dd8, type: 3}
+  frontSprite: {fileID: 21300000, guid: d08ac88eafc3439fa73420b0c5c17cf3, type: 3}
+  sideFlame: {fileID: 21300000, guid: 8ffb8e6d8bbe04342a4b9349cdcfd978, type: 3}
+  turnFlame: {fileID: 21300000, guid: ac1e0948029389749b33f6b2bb846730, type: 3}
+  frontFlame: {fileID: 21300000, guid: 6c2dab3038f759d40b7655e3d36c5817, type: 3}
+  portraitSprite: {fileID: 21300000, guid: 5d5919af8a2513348a3ef0e6922527e3, type: 3}

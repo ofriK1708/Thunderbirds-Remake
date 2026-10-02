@@ -65,8 +65,8 @@ namespace Thunderbirds.Tests.EditMode
         public void L2_KestrelCannotPushYellow_BothShipsSolveTheirRoutes()
         {
             Load(1);
-            Assert.AreEqual(1, _sim.State.Blocks.Count(b => b.Colour == ColourClass.Teal));
-            Assert.AreEqual(1, _sim.State.Blocks.Count(b => b.Colour == ColourClass.Yellow));
+            Assert.AreEqual(1, _sim.State.Blocks.Count(b => b.Colour == ColourClass.Light));
+            Assert.AreEqual(1, _sim.State.Blocks.Count(b => b.Colour == ColourClass.Heavy));
             Move(Direction.Right, 2);
             var before = _sim.State.GetShip(ShipId.Kestrel).Position;
             _sim.SetHeldDirection(Direction.Right);
