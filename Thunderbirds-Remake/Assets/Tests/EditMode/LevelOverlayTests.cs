@@ -64,5 +64,29 @@ namespace Thunderbirds.Tests.EditMode
             _view.Hide(); _view.Advance(2);
             Assert.IsFalse(_view.IsVisible); Assert.IsFalse(Button("retry").gameObject.activeInHierarchy);
         }
+
+        // The help and options prefabs are root canvases, which Unity saves at scale 0 and size 0. Nested under
+        // the overlay canvas nothing resizes them, so "active" alone left them invisible over the pause shade.
+        [Test]
+        public void HelpAndOptions_FillTheOverlay_WhenOpenedFromPause()
+        {
+            _view.ShowPause();
+            Button("help").onClick.Invoke();
+            AssertFillsOverlay(_view.GetComponentInChildren<HowToPlayView>(true).transform, "How to Play");
+            _view.GetComponentInChildren<HowToPlayView>(true).Close();
+            Button("options").onClick.Invoke();
+            AssertFillsOverlay(_view.GetComponentInChildren<OptionsView>(true).transform, "Options");
+        }
+
+        private void AssertFillsOverlay(Transform panel, string name)
+        {
+            var rect = (RectTransform)panel;
+            Assert.AreSame(_view.transform, rect.parent, name + " is nested under the overlay canvas");
+            Assert.AreEqual(Vector3.one, rect.localScale, name + " scale");
+            Assert.AreEqual(Vector2.zero, rect.anchorMin, name + " anchorMin");
+            Assert.AreEqual(Vector2.one, rect.anchorMax, name + " anchorMax");
+            Assert.AreEqual(Vector2.zero, rect.offsetMin, name + " offsetMin");
+            Assert.AreEqual(Vector2.zero, rect.offsetMax, name + " offsetMax");
+        }
     }
 }

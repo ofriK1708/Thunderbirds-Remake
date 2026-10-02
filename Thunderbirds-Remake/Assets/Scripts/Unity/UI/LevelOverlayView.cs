@@ -38,7 +38,21 @@ namespace Thunderbirds.Unity
             Wire(retry, () => _restart()); Wire(failedSelect, () => _select()); Wire(failedMenu, () => _menu());
             Wire(next, () => { if (_hasNext) _next(); });
             Wire(completeSelect, () => _select()); Wire(completeMenu, () => _menu());
+            FillOverlay(helpPanel.transform); FillOverlay(optionsPanel.transform);
             Hide();
+        }
+
+        /// <summary>
+        /// The help and options prefabs are root canvases, which Unity saves at scale 0 and size 0 because it
+        /// sizes root canvases itself. Nested here they are child canvases and nothing sizes them, so stretch them.
+        /// </summary>
+        public static void FillOverlay(Transform panel)
+        {
+            var rect = (RectTransform)panel;
+            rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            rect.pivot = Vector2.one * 0.5f;
+            rect.localScale = Vector3.one;
         }
 
         private void Wire(Button button, Action action) => button.onClick.AddListener(() => { if (IsReady) action(); });
