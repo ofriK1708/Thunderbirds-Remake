@@ -14,7 +14,9 @@ namespace Thunderbirds.Editor
     {
         private const string ConfigPath = "Assets/Config/GameConfig.asset";
 
-        private UnityEditor.Editor _kestrel, _atlas;
+        private const string AudioPath = "Assets/Resources/AudioConfig.asset";
+
+        private UnityEditor.Editor _kestrel, _atlas, _audio;
 
         [MenuItem("Thunderbirds/Open Game Settings")]
         public static void Open()
@@ -40,6 +42,7 @@ namespace Thunderbirds.Editor
             var config = (GameConfig)target;
             DrawShip("Kestrel settings", config.kestrel, ref _kestrel);
             DrawShip("Atlas settings", config.atlas, ref _atlas);
+            DrawAudio();
         }
 
         private static void DrawShip(string title, ShipConfig ship, ref UnityEditor.Editor editor)
@@ -55,8 +58,23 @@ namespace Thunderbirds.Editor
             using (new EditorGUI.IndentLevelScope()) editor.OnInspectorGUI();
         }
 
+        private void DrawAudio()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.LabelField("Sound settings", EditorStyles.boldLabel);
+            var audio = AssetDatabase.LoadAssetAtPath<AudioConfig>(AudioPath);
+            if (audio == null)
+            {
+                EditorGUILayout.HelpBox($"No AudioConfig at {AudioPath}: the game is silent.", MessageType.Warning);
+                return;
+            }
+            CreateCachedEditor(audio, null, ref _audio);
+            using (new EditorGUI.IndentLevelScope()) _audio.OnInspectorGUI();
+        }
+
         private void OnDisable()
         {
+            if (_audio != null) DestroyImmediate(_audio);
             if (_kestrel != null) DestroyImmediate(_kestrel);
             if (_atlas != null) DestroyImmediate(_atlas);
         }
