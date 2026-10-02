@@ -9,4 +9,4 @@ transparent background with a script.
 - `*Flame` is the matching thruster-flame layer (same width as its hull frame, cut from the flame tops down), animated in code.
 - `*_Portrait` is the complete side view, used as the still picture in the HUD.
   Facing left is the mirror image, done in code (`ShipView`).
-- The raw generated sheets are kept out of the repository (`docs/generated_images/`, untracked).
+- The raw generated sheets are in `docs/generated_images/`.
