@@ -67,7 +67,12 @@ namespace Thunderbirds.Editor
             Set(view, "oxygenText", Label(complete, "Oxygen", "Oxygen remaining: 90 seconds", new Vector2(0, 190), new Vector2(900, 65), 28));
             var help = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/HowToPlayPanel.prefab"), root.transform);
             var options = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Prefabs/OptionsPanel.prefab"), root.transform);
-            foreach (var panel in new[] {help, options}) { panel.GetComponent<Canvas>().sortingOrder = 30; panel.SetActive(false); }
+            foreach (var panel in new[] {help, options})
+            {
+                panel.GetComponent<Canvas>().sortingOrder = 30;
+                LevelOverlayView.FillOverlay(panel.transform); // root canvases are saved at scale 0
+                panel.SetActive(false);
+            }
             Set(view, "helpPanel", help.GetComponent<HowToPlayView>()); Set(view, "optionsPanel", options.GetComponent<OptionsView>());
             Set(view, "catalog", AssetDatabase.LoadAssetAtPath<LevelCatalog>("Assets/Levels/LevelCatalog.asset"));
             shade.gameObject.SetActive(false);
