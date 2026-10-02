@@ -12,4 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81c2b6265e4dde6418e79071416ab359, type: 3}
   m_Name: LevelCatalog
   m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.LevelCatalog
-  levels: []
+  levels:
+  - {fileID: 11400000, guid: 0bb9aecda2d74daea7142d04423e26f2, type: 2}
+  - {fileID: 11400000, guid: b4a1d7c9a60c4ca9a194f54faf367112, type: 2}
