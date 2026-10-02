@@ -18,9 +18,9 @@ namespace Thunderbirds.Rules
     /// <summary>Block colour by weight vs. push capacities (GDD §3 Blocks).</summary>
     public enum ColourClass
     {
-        Teal,   // weight <= Kestrel pushCapacity
-        Yellow, // weight <= Atlas pushCapacity
-        Red     // too heavy for either ship
+        Light,  // weight <= Kestrel pushCapacity: either ship can push it
+        Heavy,  // weight <= Atlas pushCapacity: only Atlas can
+        TooHeavy // too heavy for either ship
     }
 
     public enum SimStatus

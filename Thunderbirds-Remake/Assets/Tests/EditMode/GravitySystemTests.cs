@@ -8,7 +8,7 @@ namespace Thunderbirds.Tests.EditMode
     {
         private static BlockState Block(char id, int x, int y, params GridPos[] shape) =>
             new BlockState(new BlockId(id), new GridPos(x, y),
-                shape.Length == 0 ? new[] { new GridPos(0, 0) } : shape, ColourClass.Teal);
+                shape.Length == 0 ? new[] { new GridPos(0, 0) } : shape, ColourClass.Light);
 
         private static SimulationState Room(BlockState[] blocks, bool[,] walls = null, params ShipState[] ships) =>
             new SimulationState(walls ?? new bool[12, 20], ships, blocks, 3, 90);

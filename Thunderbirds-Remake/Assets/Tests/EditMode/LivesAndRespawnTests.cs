@@ -30,10 +30,10 @@ namespace Thunderbirds.Tests.EditMode
                 var blocks = new[]
                 {
                     new BlockState(Load, loadAboveStart ? new GridPos(2, 3) : new GridPos(6, 3),
-                        Enumerable.Range(0, 5).Select(dx => new GridPos(dx, 0)).ToArray(), ColourClass.Yellow)
+                        Enumerable.Range(0, 5).Select(dx => new GridPos(dx, 0)).ToArray(), ColourClass.Heavy)
                 }.ToList();
                 if (blockStart)
-                    blocks.Add(new BlockState(Blocker, KestrelStart, new[] { new GridPos(0, 0) }, ColourClass.Teal));
+                    blocks.Add(new BlockState(Blocker, KestrelStart, new[] { new GridPos(0, 0) }, ColourClass.Light));
                 return _state = new SimulationState(walls, new[] { kestrel, atlas }, blocks, lives, 90);
             }, new SimulationConfig { CrushGraceSeconds = 1f, RespawnGhostSeconds = ghostSeconds });
         }

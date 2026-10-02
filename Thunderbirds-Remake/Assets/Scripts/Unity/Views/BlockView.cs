@@ -33,7 +33,14 @@ namespace Thunderbirds.Unity
             {
                 var cell = _pool.Get();
                 cell.name = $"Cell {offset.X},{offset.Y}";
-                cell.Configure(offset, shape, config.ColourOf(block.Colour), config.tombVoid);
+                var classColour = config.ColourOf(block.Colour);
+                if (config.blockCell == null)
+                    cell.Configure(offset, shape, classColour, config.tombVoid); // flat look: colour fill, dark outline
+                else
+                    // Textured look: stone fill, with the colour class on the edge and glowing inward from it.
+                    cell.Configure(offset, shape, config.blockStone, classColour,
+                        Color.Lerp(config.blockStone, Color.black, 0.45f), config.blockEdgeWidth,
+                        config.blockGlow, config.blockGlowWidth, varyFill: true);
                 _cells.Add(cell);
             }
             SyncPosition(block);

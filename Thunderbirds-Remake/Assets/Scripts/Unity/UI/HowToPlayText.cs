@@ -1,4 +1,5 @@
 using System.Globalization;
+using UnityEngine;
 
 namespace Thunderbirds.Unity
 {
@@ -19,13 +20,15 @@ namespace Thunderbirds.Unity
             $"Pushes {atlas.pushCapacity}, carries {atlas.loadCapacity} cells.\n\n" +
             "Both ships hover when stopped.";
 
-        public static string Blocks(ShipConfig kestrel, ShipConfig atlas) =>
-            $"<color=#25BCBC>TEAL</color>     up to {kestrel.pushCapacity}: either ship\n" +
-            $"<color=#FFFF40>YELLOW</color>  up to {atlas.pushCapacity}: Atlas only\n" +
-            $"<color=#E04040>RED</color>       over {atlas.pushCapacity}: too heavy\n\n" +
+        /// <summary>The three weight classes, each word in its own edge colour from GameConfig.</summary>
+        public static string Blocks(ShipConfig kestrel, ShipConfig atlas, Color light, Color heavy, Color tooHeavy) =>
+            $"<color=#{ColorUtility.ToHtmlStringRGB(light)}>LIGHT</color>  up to {kestrel.pushCapacity}: either ship\n" +
+            $"<color=#{ColorUtility.ToHtmlStringRGB(heavy)}>HEAVY</color>  up to {atlas.pushCapacity}: Atlas only\n" +
+            $"<color=#{ColorUtility.ToHtmlStringRGB(tooHeavy)}>TOO HEAVY</color>  over {atlas.pushCapacity}: no ship\n\n" +
+            "The edge colour shows the class.\n" +
             "Weight = number of occupied cells.\n" +
             "A push counts the whole chain,\nincluding blocks resting on top.\n" +
-            "Unsupported blocks fall.\nBlocks never rotate or merge.";
+            "Unsupported blocks fall.";
 
         public static string Survival(float crushGraceSeconds, int lives, float respawnGhostSeconds) =>
             "Overloaded? A crush ring gives you\n" +

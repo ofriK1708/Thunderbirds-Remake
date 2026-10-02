@@ -183,7 +183,7 @@ namespace Thunderbirds.Tests.EditMode
             _events.Raise(new ShipRespawned(ShipId.Kestrel, _kestrel.Start, true));
             _events.Raise(new ShipStressed(ShipId.Kestrel, 8, 3));
             _events.Raise(new ActiveShipChanged(ShipId.Kestrel, true));
-            _events.Raise(new MoveRefused(ShipId.Kestrel, Direction.Right, RefuseReason.Blocked, null, ColourClass.Teal));
+            _events.Raise(new MoveRefused(ShipId.Kestrel, Direction.Right, RefuseReason.Blocked, null, ColourClass.Light));
             _events.Flush();
             var alpha = _view.Body.color.a;
             _view.UpdatePose(0.1f);
@@ -203,7 +203,7 @@ namespace Thunderbirds.Tests.EditMode
         public void Refusal_BumpsOnlyTheBody_ThenReturns(Direction direction, int x, int y)
         {
             _config.hoverBobAmplitude = 0;
-            _events.Raise(new MoveRefused(ShipId.Kestrel, direction, RefuseReason.Blocked, null, ColourClass.Teal));
+            _events.Raise(new MoveRefused(ShipId.Kestrel, direction, RefuseReason.Blocked, null, ColourClass.Light));
             _events.Flush();
             _view.UpdatePose(0.09f);
             Assert.That(Vector3.Distance(new Vector3(x, y, 0) * 0.12f, _view.Body.transform.localPosition), Is.LessThan(1e-5f));
@@ -238,7 +238,7 @@ namespace Thunderbirds.Tests.EditMode
             var colour = _view.Body.color;
             _events.Raise(new ShipStressed(ShipId.Atlas, 9, 3));
             _events.Raise(new ShipRespawned(ShipId.Atlas, new GridPos(5, 1), true));
-            _events.Raise(new MoveRefused(ShipId.Atlas, Direction.Right, RefuseReason.Blocked, null, ColourClass.Teal));
+            _events.Raise(new MoveRefused(ShipId.Atlas, Direction.Right, RefuseReason.Blocked, null, ColourClass.Light));
             _events.Flush();
             _view.UpdatePose(0.09f);
             Assert.AreEqual(colour, _view.Body.color);

@@ -82,5 +82,68 @@ namespace Thunderbirds.Tests.EditMode
                 Object.DestroyImmediate(textured.texture); Object.DestroyImmediate(textured);
             }
         }
+
+        [Test]
+        public void TexturedBlock_IsStone_WithItsColourClassOnTheEdge_AndGlowingInward()
+        {
+            var config = ScriptableObject.CreateInstance<GameConfig>();
+            var plain = Sprite.Create(new Texture2D(4, 4), new Rect(0, 0, 4, 4), Vector2.one * 0.5f, 4f);
+            var stone = Sprite.Create(new Texture2D(64, 64), new Rect(0, 0, 64, 64), Vector2.one * 0.5f, 64f);
+            var view = new GameObject("Block").AddComponent<BlockView>();
+            try
+            {
+                config.blockCell = stone;
+                // Two cells side by side: the shared side is a seam, the other three sides of each are outside edges.
+                var block = new BlockState(new BlockId('a'), new GridPos(0, 0),
+                    new[] { new GridPos(0, 0), new GridPos(1, 0) }, ColourClass.Heavy);
+                view.Build(block, config, plain);
+                var left = view.Cells[0].transform;
+
+                Assert.AreEqual(config.blockStone, left.Find("Fill").GetComponent<SpriteRenderer>().color, "stone, not paint");
+                Assert.AreEqual(config.blockHeavy, left.Find("Edge Up").GetComponent<SpriteRenderer>().color, "the class colour is on the edge");
+                Assert.AreNotEqual(config.blockHeavy, left.Find("Edge Right").GetComponent<SpriteRenderer>().color, "the seam is not");
+
+                var glowUp = left.Find("Glow Up").GetComponent<SpriteRenderer>();
+                Assert.IsTrue(glowUp.enabled);
+                Assert.AreEqual(config.blockHeavy.r, glowUp.color.r);
+                Assert.AreEqual(config.blockGlow, glowUp.color.a, 1e-4f);
+                Assert.IsFalse(left.Find("Glow Right").GetComponent<SpriteRenderer>().enabled, "no glow along a seam");
+                Assert.Greater(glowUp.sortingOrder, left.Find("Fill").GetComponent<SpriteRenderer>().sortingOrder);
+                Assert.Less(glowUp.sortingOrder, left.Find("Edge Up").GetComponent<SpriteRenderer>().sortingOrder);
+
+                // The edge is as wide as the setting says.
+                var edge = left.Find("Edge Up");
+                Assert.AreEqual(config.blockEdgeWidth, edge.GetComponent<SpriteRenderer>().sprite.bounds.size.y * edge.localScale.y, 1e-3f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(view.gameObject);
+                Object.DestroyImmediate(config);
+                Object.DestroyImmediate(plain.texture); Object.DestroyImmediate(plain);
+                Object.DestroyImmediate(stone.texture); Object.DestroyImmediate(stone);
+            }
+        }
+
+        [Test]
+        public void FlatBlock_WithoutATexture_KeepsTheOldLook_ColourFillAndNoGlow()
+        {
+            var config = ScriptableObject.CreateInstance<GameConfig>();
+            var plain = Sprite.Create(new Texture2D(4, 4), new Rect(0, 0, 4, 4), Vector2.one * 0.5f, 4f);
+            var view = new GameObject("Block").AddComponent<BlockView>();
+            try
+            {
+                view.Build(new BlockState(new BlockId('a'), new GridPos(0, 0), new[] { new GridPos(0, 0) }, ColourClass.Light), config, plain);
+                var cell = view.Cells[0].transform;
+                Assert.AreEqual(config.blockLight, cell.Find("Fill").GetComponent<SpriteRenderer>().color);
+                Assert.AreEqual(config.tombVoid, cell.Find("Edge Up").GetComponent<SpriteRenderer>().color);
+                Assert.IsNull(cell.Find("Glow Up"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(view.gameObject);
+                Object.DestroyImmediate(config);
+                Object.DestroyImmediate(plain.texture); Object.DestroyImmediate(plain);
+            }
+        }
     }
 }

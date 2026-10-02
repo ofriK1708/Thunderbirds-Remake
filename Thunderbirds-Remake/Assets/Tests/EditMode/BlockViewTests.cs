@@ -45,7 +45,7 @@ namespace Thunderbirds.Tests.EditMode
             for (var i = 0; i < 4; i++) if ((mask & (1 << i)) != 0) shape.Add(steps[i]);
             var cell = _root.AddComponent<CellView>();
             cell.Initialize(_sprite, null);
-            cell.Configure(new GridPos(0, 0), shape, _config.blockTeal, _config.tombVoid);
+            cell.Configure(new GridPos(0, 0), shape, _config.blockLight, _config.tombVoid);
             Assert.AreEqual((CellNeighbours)mask, cell.Neighbours);
             for (var i = 0; i < 4; i++)
             {
@@ -53,7 +53,7 @@ namespace Thunderbirds.Tests.EditMode
                 if ((mask & (1 << i)) == 0) Assert.AreEqual(_config.tombVoid, edge.color);
                 else
                 {
-                    Assert.Greater(edge.color.grayscale, _config.blockTeal.grayscale);
+                    Assert.Greater(edge.color.grayscale, _config.blockLight.grayscale);
                     Assert.Less(Mathf.Min(edge.bounds.size.x, edge.bounds.size.y), 0.02f);
                 }
             }
@@ -66,11 +66,11 @@ namespace Thunderbirds.Tests.EditMode
             var shape = new HashSet<GridPos> { new GridPos(0, 0), new GridPos(x, 0), new GridPos(0, y) };
             var cell = _root.AddComponent<CellView>();
             cell.Initialize(_sprite, null);
-            cell.Configure(new GridPos(0, 0), shape, _config.blockTeal, _config.tombVoid);
+            cell.Configure(new GridPos(0, 0), shape, _config.blockLight, _config.tombVoid);
             Assert.AreEqual(corner, cell.InnerCorners);
             Assert.AreEqual(1, cell.GetComponentsInChildren<SpriteRenderer>().Count(r => r.name.StartsWith("Inner corner") && r.enabled));
             shape.Add(new GridPos(x, y));
-            cell.Configure(new GridPos(0, 0), shape, _config.blockTeal, _config.tombVoid);
+            cell.Configure(new GridPos(0, 0), shape, _config.blockLight, _config.tombVoid);
             Assert.AreEqual(0, cell.InnerCorners);
             Assert.IsFalse(cell.GetComponentsInChildren<SpriteRenderer>().Any(r => r.name.StartsWith("Inner corner") && r.enabled));
         }
@@ -96,11 +96,11 @@ namespace Thunderbirds.Tests.EditMode
             Assert.Greater(outline.sortingOrder, seam.sortingOrder, "Seams must not cut through the outside outline.");
         }
 
-        [TestCase(ColourClass.Teal)] [TestCase(ColourClass.Yellow)] [TestCase(ColourClass.Red)]
+        [TestCase(ColourClass.Light)] [TestCase(ColourClass.Heavy)] [TestCase(ColourClass.TooHeavy)]
         public void ModelColourClass_UsesConfiguredPalette(ColourClass colour)
         {
-            _config.blockTeal = Color.cyan;
-            _config.blockYellow = Color.magenta;
+            _config.blockLight = Color.cyan;
+            _config.blockHeavy = Color.magenta;
             _config.blockRed = Color.red;
             var view = Build(new[] { new GridPos(0, 0) }, colour);
             Assert.AreEqual(_config.ColourOf(colour), view.Cells[0].transform.Find("Fill").GetComponent<SpriteRenderer>().color);
@@ -111,7 +111,7 @@ namespace Thunderbirds.Tests.EditMode
         {
             var view = Build(new[] { new GridPos(0, 0), new GridPos(1, 0), new GridPos(0, 1) });
             var original = view.Cells.Select(c => c.GetInstanceID()).ToArray();
-            var model = new BlockState(new BlockId('b'), new GridPos(4, 6), new[] { new GridPos(0, 0) }, ColourClass.Yellow);
+            var model = new BlockState(new BlockId('b'), new GridPos(4, 6), new[] { new GridPos(0, 0) }, ColourClass.Heavy);
             view.Build(model, _config, _sprite);
             Assert.AreEqual(3, view.AllocatedCells);
             Assert.Contains(view.Cells[0].GetInstanceID(), original);
@@ -119,12 +119,12 @@ namespace Thunderbirds.Tests.EditMode
             Assert.AreEqual(CellNeighbours.None, view.Cells[0].Neighbours);
             Assert.AreEqual(0, view.Cells[0].InnerCorners);
             Assert.AreEqual(new Vector3(4, 6, 0), view.transform.localPosition);
-            Assert.AreEqual(_config.blockYellow, view.Cells[0].transform.Find("Fill").GetComponent<SpriteRenderer>().color);
+            Assert.AreEqual(_config.blockHeavy, view.Cells[0].transform.Find("Fill").GetComponent<SpriteRenderer>().color);
             view.Clear();
             Assert.AreEqual(0, view.GetComponentsInChildren<CellView>().Length);
         }
 
-        private BlockView Build(GridPos[] cells, ColourClass colour = ColourClass.Teal)
+        private BlockView Build(GridPos[] cells, ColourClass colour = ColourClass.Light)
         {
             var view = new GameObject("Block").AddComponent<BlockView>();
             view.transform.SetParent(_root.transform, false);

@@ -51,10 +51,12 @@ namespace Thunderbirds.Tests.EditMode
         [Test]
         public void BlocksCard_ColourThresholdsFollowPushCapacities()
         {
-            var text = HowToPlayText.Blocks(_kestrel, _atlas);
+            var text = HowToPlayText.Blocks(_kestrel, _atlas, Color.magenta, Color.blue, Color.red);
             StringAssert.Contains("up to 3: either ship", text);
             StringAssert.Contains("up to 7: Atlas only", text);
-            StringAssert.Contains("over 7: too heavy", text);
+            StringAssert.Contains("over 7: no ship", text);
+            StringAssert.Contains("<color=#FF00FF>LIGHT</color>", text, "each class word is in its configured colour");
+            StringAssert.Contains("<color=#0000FF>HEAVY</color>", text);
         }
 
         [Test]
@@ -93,7 +95,7 @@ namespace Thunderbirds.Tests.EditMode
                 _kestrel.pushCapacity = _kestrel.loadCapacity = 10;
                 _atlas.pushCapacity = _atlas.loadCapacity = 16;
                 AssertFits(serialized, "shipsText", HowToPlayText.Ships(_kestrel, _atlas, 1.5f));
-                AssertFits(serialized, "blocksText", HowToPlayText.Blocks(_kestrel, _atlas));
+                AssertFits(serialized, "blocksText", HowToPlayText.Blocks(_kestrel, _atlas, Color.magenta, Color.blue, Color.red));
                 AssertFits(serialized, "survivalText", HowToPlayText.Survival(12.5f, 10, 12.5f));
             }
             finally

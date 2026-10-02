@@ -1,5 +1,6 @@
 using Thunderbirds.Rules;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Thunderbirds.Unity
 {
@@ -62,8 +63,20 @@ namespace Thunderbirds.Unity
         [Tooltip("Wall tiles. Each wall cell picks one, always the same one for the same cell.")]
         public Sprite[] wallTiles;
 
-        [Tooltip("The fill of one block cell. Must be near-white: it is tinted teal / yellow / red.")]
+        [Tooltip("The stone texture of one block cell. Must be near-white: it is tinted with Block Stone.")]
         public Sprite blockCell;
+
+        [Tooltip("Colour of the stone that textured blocks are made of. The colour class is shown on the edge and its glow.")]
+        public Color blockStone = new Color(0.50f, 0.48f, 0.50f, 1f);
+
+        [Tooltip("Width of a textured block's coloured edge, in cells.")]
+        [Range(0.02f, 0.2f)] public float blockEdgeWidth = 0.07f;
+
+        [Tooltip("How strongly the edge colour glows inward over the stone (0 = no glow).")]
+        [Range(0f, 1f)] public float blockGlow = 0.4f;
+
+        [Tooltip("How far the glow reaches into the block, in cells.")]
+        [Range(0.05f, 0.5f)] public float blockGlowWidth = 0.32f;
 
         [Tooltip("Tiled behind the level.")]
         public Sprite backgroundTile;
@@ -78,8 +91,10 @@ namespace Thunderbirds.Unity
         public Color tombVoid = Hex(0x101010);
         public Color sandstone = Hex(0xE0A040);
         public Color sandShadow = Hex(0x785828);
-        public Color blockTeal = Hex(0x008080);
-        public Color blockYellow = Hex(0xFFFF40);
+        [Tooltip("Blocks either ship can push (matches Kestrel).")]
+        [FormerlySerializedAs("blockTeal")] public Color blockLight = Hex(0xA884F3);
+        [Tooltip("Blocks only Atlas can push (matches Atlas).")]
+        [FormerlySerializedAs("blockYellow")] public Color blockHeavy = Hex(0x3F8CFF);
         public Color blockRed = Hex(0xE04040);
         public Color dockLit = Hex(0x40E040);
         public Color uiMuted = Hex(0x888888);
@@ -114,8 +129,8 @@ namespace Thunderbirds.Unity
         {
             switch (colour)
             {
-                case ColourClass.Teal: return blockTeal;
-                case ColourClass.Yellow: return blockYellow;
+                case ColourClass.Light: return blockLight;
+                case ColourClass.Heavy: return blockHeavy;
                 default: return blockRed;
             }
         }

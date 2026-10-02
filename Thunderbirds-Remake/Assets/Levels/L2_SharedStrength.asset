@@ -15,4 +15,4 @@ MonoBehaviour:
   displayName: L2 - Shared Strength
   grid: "################################\n################################\n#...........aa......11.........#\n#...........aa......11.........#\n########..######################\n########..######################\n#.AAAA..KK..bbb......2222......#\n#.AAAA..KK..bbb......2222......#\n################################"
   timeLimitSeconds: 120
-  hintText: "Kestrel fits the narrow shaft and pushes teal. Switch to Atlas for yellow. Clear both routes to the pads."
+  hintText: "Kestrel fits the narrow shaft and pushes the light block. Switch to Atlas for the heavy one. Clear both routes to the pads."

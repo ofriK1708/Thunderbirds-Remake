@@ -83,9 +83,9 @@ namespace Thunderbirds.Tests.EditMode
             var level = LevelParser.Parse(GddExample, AtlasPush);
             var state = level.CreateState(new SimulationConfig(), lives: 3, oxygenSeconds: 60f);
 
-            Assert.AreEqual(ColourClass.Teal, state.GetBlock(new BlockId('b')).Colour);
-            Assert.AreEqual(ColourClass.Yellow, state.GetBlock(new BlockId('c')).Colour);
-            Assert.AreEqual(ColourClass.Teal, state.GetBlock(new BlockId('d')).Colour);
+            Assert.AreEqual(ColourClass.Light, state.GetBlock(new BlockId('b')).Colour);
+            Assert.AreEqual(ColourClass.Heavy, state.GetBlock(new BlockId('c')).Colour);
+            Assert.AreEqual(ColourClass.Light, state.GetBlock(new BlockId('d')).Colour);
             Assert.AreEqual(new GridPos(1, 3), state.GetShip(ShipId.Kestrel).Position);
             Assert.AreEqual(3, state.LivesLeft);
             Assert.AreEqual(60f, state.OxygenTotal);

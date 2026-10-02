@@ -7,7 +7,7 @@ namespace Thunderbirds.Tests.EditMode
     public class GridModelTests
     {
         private static BlockState Block(char id, int x, int y, params GridPos[] cells) =>
-            new BlockState(new BlockId(id), new GridPos(x, y), cells, ColourClass.Teal);
+            new BlockState(new BlockId(id), new GridPos(x, y), cells, ColourClass.Light);
 
         private static SimulationState State(bool[,] walls, BlockState[] blocks, params ShipState[] ships) =>
             new SimulationState(walls, ships, blocks, 3, 90f);
