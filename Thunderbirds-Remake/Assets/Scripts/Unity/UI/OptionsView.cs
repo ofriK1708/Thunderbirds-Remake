@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Thunderbirds.Unity
 {
-    /// <summary>Persistent fullscreen setting; audio and push-preview controls await their features.</summary>
+    /// <summary>Persistent fullscreen and volume settings; the push-preview control awaits its feature.</summary>
     public sealed class OptionsView : MonoBehaviour
     {
         [SerializeField] private RectTransform content;
@@ -52,12 +52,21 @@ namespace Thunderbirds.Unity
             Fit();
             fullscreen.SetIsOnWithoutNotify(DisplaySettings.Fullscreen);
             fullscreen.onValueChanged.AddListener(DisplaySettings.SetFullscreen);
-            music.interactable = effects.interactable = pushPreview.interactable = false;
+            pushPreview.interactable = false;
+            music.interactable = effects.interactable = true;
             backButton.onClick.AddListener(Close);
+            ShowSavedVolumes();
             music.onValueChanged.AddListener(UpdateMusic);
             effects.onValueChanged.AddListener(UpdateEffects);
-            UpdateMusic(music.value);
-            UpdateEffects(effects.value);
+        }
+
+        /// <summary>Put the sliders where the saved settings are, without counting that as a change.</summary>
+        public void ShowSavedVolumes()
+        {
+            music.SetValueWithoutNotify(ToSlider(music, SoundSettings.Music));
+            effects.SetValueWithoutNotify(ToSlider(effects, SoundSettings.Effects));
+            musicValue.text = Percent(SoundSettings.Music);
+            effectsValue.text = Percent(SoundSettings.Effects);
         }
 
         private void OnDisable()
@@ -68,8 +77,23 @@ namespace Thunderbirds.Unity
             effects.onValueChanged.RemoveListener(UpdateEffects);
         }
 
-        private void UpdateMusic(float value) => musicValue.text = Mathf.RoundToInt(value) + "%";
-        private void UpdateEffects(float value) => effectsValue.text = Mathf.RoundToInt(value) + "%";
+        /// <summary>Slider callbacks: the change is saved and heard at once (AudioManager reads the setting every frame).</summary>
+        public void UpdateMusic(float value)
+        {
+            SoundSettings.SetMusic(FromSlider(music, value));
+            musicValue.text = Percent(SoundSettings.Music);
+        }
+
+        public void UpdateEffects(float value)
+        {
+            SoundSettings.SetEffects(FromSlider(effects, value));
+            effectsValue.text = Percent(SoundSettings.Effects);
+        }
+
+        // The sliders run 0..100 in the prefab; settings are 0..1.
+        private static float FromSlider(Slider slider, float value) => Mathf.InverseLerp(slider.minValue, slider.maxValue, value);
+        private static float ToSlider(Slider slider, float volume) => Mathf.Lerp(slider.minValue, slider.maxValue, volume);
+        private static string Percent(float volume) => Mathf.RoundToInt(volume * 100f) + "%";
         private void OnRectTransformDimensionsChange() => Fit();
         private void Fit()
         {
