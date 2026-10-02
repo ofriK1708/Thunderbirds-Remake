@@ -17,29 +17,4 @@ namespace Thunderbirds.Unity
             PlayerPrefs.Save();
         }
     }
-
-    /// <summary>One-shot scene handoff, not a persistent scene object.</summary>
-    public static class LevelLaunch
-    {
-        private static LevelData _pending;
-        private static int _index = -1;
-        public static bool OpenSelection { get; set; }
-        public static bool Select(LevelCatalog catalog, int index)
-        {
-            var data = catalog != null ? catalog.Get(index) : null;
-            if (data == null || !LevelProgress.IsUnlocked(index)) return false;
-            _pending = data;
-            _index = index;
-            return true;
-        }
-        public static LevelData Take(out int index)
-        {
-            var data = _pending;
-            index = _index;
-            Clear();
-            return data;
-        }
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        public static void Clear() { _pending = null; _index = -1; OpenSelection = false; }
-    }
 }
