@@ -53,6 +53,7 @@ namespace Thunderbirds.Unity
                 () => _definition.CreateState(config.ToSimulationConfig(), config.livesPerLevel, config.OxygenFor(_data)),
                 config.ToSimulationConfig);
             _simulation.Events.MoveRefused += OnMoveRefused;
+            _simulation.Events.RefusalHint += OnRefusalHint;
             _simulation.Events.LevelComplete += OnLevelComplete;
             _simulation.Events.LevelFailed += OnLevelFailed;
             _camera = Camera.main;
@@ -167,12 +168,33 @@ namespace Thunderbirds.Unity
 
         private void OnMoveRefused(MoveRefused refused)
         {
-            var message = refused.Reason == RefuseReason.FallWonTie
-                ? "A falling block got there first. Try again."
-                : refused.Reason == RefuseReason.TooHeavy
-                ? (refused.Ship == ShipId.Kestrel ? "Too heavy for Kestrel. Try Atlas." : "Too heavy, even for Atlas.")
-                : "Blocked. Try another direction.";
-            _hud.ShowMessage(message, 3f);
+            _hud.ShowMessage(RefusalMessage(refused.Ship, refused.Reason, refused.ChainColour), 3f);
+            if (refused.Reason != RefuseReason.TooHeavy) return;
+            // The whole chain shows the class of its total weight: red when no ship could move it (GDD §3 Push).
+            var colour = _config.ColourOf(refused.ChainColour);
+            foreach (var id in refused.Chain)
+                if (_blocks.TryGetValue(id, out var view)) view.Flash(colour, _config.refusalFlashSeconds);
+        }
+
+        /// <summary>The player kept pushing into a refusal: say what would work instead.</summary>
+        private void OnRefusalHint(RefusalHint hint)
+        {
+            var message = hint.Reason == RefuseReason.TooHeavy
+                ? "Still too heavy. Push fewer blocks at once, or move one out of the row first."
+                : "Still blocked. Something solid is behind it: try from the other side.";
+            _hud.ShowMessage(message, 5f);
+        }
+
+        /// <summary>
+        /// What to tell the player after a refused move. <paramref name="chainColour"/> is the class of the whole
+        /// chain's weight, so "try Atlas" is only said when Atlas really could push it.
+        /// </summary>
+        public static string RefusalMessage(ShipId ship, RefuseReason reason, ColourClass chainColour)
+        {
+            if (reason == RefuseReason.FallWonTie) return "A falling block got there first. Try again.";
+            if (reason != RefuseReason.TooHeavy) return "Blocked. Try another direction.";
+            if (chainColour == ColourClass.TooHeavy) return "Too heavy for either ship. Push fewer blocks at once.";
+            return ship == ShipId.Kestrel ? "Too heavy for Kestrel. Try Atlas." : "Too heavy for Atlas.";
         }
 
         private void Restart()
@@ -245,6 +267,7 @@ namespace Thunderbirds.Unity
             if (_simulation != null) _simulation.Events.LevelComplete -= OnLevelComplete;
             if (_simulation != null) _simulation.Events.LevelFailed -= OnLevelFailed;
             if (_simulation != null) _simulation.Events.MoveRefused -= OnMoveRefused;
+            if (_simulation != null) _simulation.Events.RefusalHint -= OnRefusalHint;
             _input?.Dispose();
             _uiInput?.Dispose();
             if (_ownedEventSystem != null) Destroy(_ownedEventSystem);

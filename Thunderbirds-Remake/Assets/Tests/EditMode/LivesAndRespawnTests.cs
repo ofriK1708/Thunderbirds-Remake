@@ -164,6 +164,40 @@ namespace Thunderbirds.Tests.EditMode
             Assert.IsFalse(_state.GetShip(ShipId.Kestrel).IsGhost);
         }
 
+        /// <summary>
+        /// Issue #15's last criterion: when one tick both crushes a ship (last life) and puts the other on its
+        /// dock, the level fails. Failure is checked before success (GDD §3 tick order).
+        /// </summary>
+        [Test]
+        public void ATickThatBothCrushesAndDocks_Fails_AndNeverCompletes()
+        {
+            var dock = new GridPos(6, 1);
+            SimulationState state = null;
+            var sim = new Simulation(() =>
+            {
+                var walls = new bool[20, 12];
+                for (var x = 0; x < 20; x++) walls[x, 0] = true;
+                // Kestrel sits on its dock under a 5-cell bar it cannot carry; Atlas is one step from its dock.
+                var kestrel = new ShipState(ShipId.Kestrel, 2, 2, KestrelStart, dock) { Position = dock };
+                var atlas = new ShipState(ShipId.Atlas, 4, 2, new GridPos(13, 1), new GridPos(14, 1));
+                var bar = new BlockState(Load, new GridPos(6, 3),
+                    Enumerable.Range(0, 5).Select(dx => new GridPos(dx, 0)).ToArray(), ColourClass.Heavy);
+                return state = new SimulationState(walls, new[] { kestrel, atlas }, new[] { bar }, 1, 90, ShipId.Atlas);
+            }, new SimulationConfig { CrushGraceSeconds = 1f });
+
+            sim.Tick(0f); // the countdown starts; nothing is complete yet
+            Assert.AreEqual(SimStatus.Playing, state.Status);
+
+            sim.SetHeldDirection(Direction.Right);
+            sim.Tick(1f); // Atlas steps onto its dock (stage 2) and the countdown ends (stages 4-5) in one tick
+
+            var atlasNow = state.GetShip(ShipId.Atlas);
+            Assert.AreEqual(atlasNow.Dock, atlasNow.Position, "Atlas did dock in this tick");
+            Assert.AreEqual(SimStatus.Failed, state.Status);
+            Assert.AreEqual(FailReason.Crushed, sim.Events.Log.OfType<LevelFailed>().Single().Reason);
+            Assert.IsEmpty(sim.Events.Log.OfType<LevelComplete>());
+        }
+
         // ---- respawn protection: the ship always comes back as a ghost for RespawnGhostSeconds ----
 
         private static void Wait(Simulation sim, float seconds)

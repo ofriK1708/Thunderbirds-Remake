@@ -34,6 +34,9 @@ namespace Thunderbirds.Unity
         [Tooltip("Keep pushing into a refused move this long and a hint appears.")]
         [Min(0f)] public float refusalHintSeconds = 5f;
 
+        [Tooltip("How long a refused chain of blocks shows the colour of its total weight (red = no ship can push it).")]
+        [Min(0f)] public float refusalFlashSeconds = 1.2f;
+
         [Header("Level")]
         [Min(1)] public int livesPerLevel = 3;
 

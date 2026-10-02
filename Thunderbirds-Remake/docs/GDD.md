@@ -143,6 +143,7 @@ stateDiagram-v2
 | `crushGraceSeconds` | `GameConfig` | Time to save a stressed ship — **verify first** that a switch-ships-and-push rescue fits | 3.0 |
 | `respawnGhostSeconds` | `GameConfig` | How long a crushed ship stays a ghost at its start cell: blocks fall through it and it cannot be flown (0 = reappear at once if the start is clear) | 3.0 |
 | `refusalHintSeconds` | `GameConfig` | How long the player pushes into a refused move before the hint popup | 5.0 |
+| `refusalFlashSeconds` | `GameConfig` | How long a refused chain shows the colour of its total weight (red = no ship can push it) | 1.2 |
 | `livesPerLevel` | `GameConfig` | Crushes allowed before the level fails | 3 |
 | `defaultTimeLimitSeconds` | `GameConfig` | Oxygen when a level doesn't set its own | 90 |
 | `timeLimitSeconds` | `LevelData` | Oxygen for this level (0 = use default) | per level |
@@ -495,3 +496,4 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 | v0.1.11 | 2026-10-02 | §6/§7: wall, block and background tile art; breathing thruster flames; docks are only the letter marker |
 | v0.1.12 | 2026-10-02 | §6: textured blocks are stone with the colour class on a glowing edge, not a painted fill |
 | v0.1.13 | 2026-10-02 | Block classes renamed Light / Heavy / TooHeavy and recoloured to match the ships: purple = either ship, blue = Atlas only, red = neither (was teal / yellow / red); Kestrel art redrawn to fill its 2 x 2 footprint |
+| v0.1.14 | 2026-10-02 | §3 Push feedback now implemented in the views: a refused chain flashes the colour of its total weight; the message only suggests Atlas when Atlas could push it; `RefusalHint` shows a hint in the HUD |
