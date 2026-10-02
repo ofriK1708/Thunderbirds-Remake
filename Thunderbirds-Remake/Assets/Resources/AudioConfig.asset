@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b60769651a7434999e2f10b50ee6dee, type: 3}
+  m_Name: AudioConfig
+  m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.AudioConfig
+  masterVolume: 1
+  musicVolume: 0.45
+  effectsVolume: 0.8
+  engineVolume: 0.3
+  music: {fileID: 8300000, guid: 621604b4c193a3c47868159d9b8edd3d, type: 3}
+  kestrelEngine: {fileID: 8300000, guid: 87f777ed8c7f9b4459d460799b25be68, type: 3}
+  atlasEngine: {fileID: 8300000, guid: 4fa9e7aa26ba2e94fbef8018827b7e92, type: 3}
+  idleEngineLevel: 0.25
+  engineFadeSeconds: 0.18
+  bump: {fileID: 8300000, guid: dc33803ad34ee8d4e96274292835d2cb, type: 3}
+  dock: {fileID: 8300000, guid: a02ab638d09b4fa4d816c0c4cb5746e8, type: 3}
+  switchShip: {fileID: 8300000, guid: ce3ce9dd46360ab4bba80a74e8b1f27d, type: 3}
+  overload: {fileID: 8300000, guid: 391ddcdc95e790242a7040f363cd222e, type: 3}
+  crush: {fileID: 8300000, guid: 251abef6bacc40d4a880e8729f510765, type: 3}
+  levelComplete: {fileID: 8300000, guid: 9718bf6ee310f894fbe6644f93905a2a, type: 3}
+  gameOver: {fileID: 8300000, guid: 61ada52f3eb67df428619abf836cb29f, type: 3}

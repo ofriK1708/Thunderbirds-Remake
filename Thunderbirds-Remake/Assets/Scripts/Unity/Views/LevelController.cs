@@ -30,6 +30,7 @@ namespace Thunderbirds.Unity
         private LevelData _data;
         private LevelOverlayView _overlays;
         private HudView _hud;
+        private LevelAudio _audio;
         private LevelView _levelView;
         private GameObject _ownedEventSystem;
         private InputReader _uiInput;
@@ -91,6 +92,8 @@ namespace Thunderbirds.Unity
             CreateActions();
             CreateOverlays();
             CreateHud();
+            var sound = AudioManager.Instance;
+            _audio = new LevelAudio(sound, () => State, _simulation.Events, sound.IdleEngineLevel);
             RefreshVisuals();
         }
 
@@ -154,6 +157,7 @@ namespace Thunderbirds.Unity
             _input.SetGameplayEnabled(!_paused && State.Status == SimStatus.Playing);
             _hud.SetRestartProgress(RestartProgress);
             _hud.Tick(_paused ? 0f : Time.deltaTime); // the hint and messages wait while paused
+            _audio.Update(Time.deltaTime, _paused);
             RefreshVisuals();
         }
 
@@ -218,6 +222,7 @@ namespace Thunderbirds.Unity
             _input.Enable();
             SetPaused(false);
             _hud.Bind(() => State, _levelTitle, _levelHint); // new state object, hint shown again
+            _audio.Reset();
             RefreshVisuals();
         }
 
@@ -269,6 +274,7 @@ namespace Thunderbirds.Unity
             if (_simulation != null) _simulation.Events.MoveRefused -= OnMoveRefused;
             if (_simulation != null) _simulation.Events.RefusalHint -= OnRefusalHint;
             _input?.Dispose();
+            _audio?.Dispose(); // engines and the overload alarm must not carry on into the menu
             _uiInput?.Dispose();
             if (_ownedEventSystem != null) Destroy(_ownedEventSystem);
         }
