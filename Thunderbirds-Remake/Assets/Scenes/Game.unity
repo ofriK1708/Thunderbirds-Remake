@@ -153,7 +153,6 @@ MonoBehaviour:
   dockPadPrefab: {fileID: 3623019196373958583, guid: dee55277d7eb0a74d88f0255e4e313e1, type: 3}
   wallPrewarm: 400
   previewLevel: {fileID: 11400000, guid: 50fc766a6fb826946a1c421e70b47fdf, type: 2}
-  unlitDockAlpha: 0.35
 --- !u!4 &301388785
 Transform:
   m_ObjectHideFlags: 0
