@@ -145,6 +145,8 @@ namespace Thunderbirds.Rules
         /// <summary>2. The active ship steps in the held/latched direction. Issue #7.</summary>
         private void MoveActiveShip(float dt)
         {
+            if (IsActiveShipGhost()) return; // both ships waiting: nothing to fly (#14)
+
             _stepTimer -= dt;
             var dir = NextStepDirection;
             if (dir == null)
@@ -191,6 +193,13 @@ namespace Thunderbirds.Rules
             }
         }
 
+        private bool IsActiveShipGhost()
+        {
+            foreach (var ship in _state.Ships)
+                if (ship.Id == _state.ActiveShip) return ship.IsGhost;
+            return false; // partial test states may have no ships
+        }
+
         private void ForgetRefusal()
         {
             _refusedDirection = null;
@@ -220,7 +229,9 @@ namespace Thunderbirds.Rules
         /// <summary>5. Crushes cost a life; ghosts materialise when their start area is clear. Issue #14.</summary>
         private void ResolveCrushesAndRespawns()
         {
-            // TODO(#14): LivesAndRespawn; raise ShipCrushed, ShipRespawned, ActiveShipChanged(automatic: true).
+            var active = _state.ActiveShip;
+            LivesAndRespawn.Resolve(_state, _events);
+            if (_state.ActiveShip != active) ForgetRefusal(); // same as a manual switch
         }
 
         /// <summary>6. Oxygen ticks down. Issue #15.</summary>
