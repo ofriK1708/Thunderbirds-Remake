@@ -1,0 +1,18 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b7068da2666b774895e667adba0e51d, type: 3}
+  m_Name: L4_Rockfall
+  m_EditorClassIdentifier: Thunderbirds.Unity::Thunderbirds.Unity.LevelData
+  displayName: L4 - Rockfall
+  grid: "########################\n#......................#\n#......................#\n#....2222..........AAAA#\n#....2222....hhhhh.AAAA#\n#........###############\n#....KK............11..#\n#....KK............11..#\n#........###############\n########################"
+  timeLimitSeconds: 90
+  hintText: "Blocks fall when nothing holds them. Fly Kestrel clear before Atlas pushes the slab off the ledge. Overloaded? You have 3 seconds: slide out from under it."

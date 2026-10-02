@@ -27,6 +27,12 @@ namespace Thunderbirds.Unity
         [Tooltip("Time to save a stressed ship before it is crushed.")]
         [Min(0.1f)] public float crushGraceSeconds = 3f;
 
+        [Tooltip("After a crush the ship is a ghost for at least this long: blocks fall through it and it cannot be flown. 0 = reappear at once.")]
+        [Min(0f)] public float respawnGhostSeconds = 3f;
+
+        [Tooltip("Keep pushing into a refused move this long and a hint appears.")]
+        [Min(0f)] public float refusalHintSeconds = 5f;
+
         [Header("Level")]
         [Min(1)] public int livesPerLevel = 3;
 
@@ -36,6 +42,34 @@ namespace Thunderbirds.Unity
         [Header("Input & feedback")]
         [Min(0f)] public float restartHoldSeconds = 0.5f;
         [Min(0f)] public float switchHighlightSeconds = 1.5f;
+
+        [Tooltip("How long a ship takes to turn around (three frames).")]
+        [Min(0f)] public float shipTurnSeconds = 0.18f;
+
+        [Tooltip("How long the level-start hint stays on screen.")]
+        [Min(0f)] public float hintBannerSeconds = 6f;
+
+        [Tooltip("The oxygen read-out turns red below this many seconds.")]
+        [Min(0f)] public float lowOxygenSeconds = 15f;
+
+        [Tooltip("How far the thruster flames stretch and shrink as they breathe (0 = still, 0.2 = 20 %).")]
+        [Range(0f, 0.6f)] public float flameBreathAmplitude = 0.18f;
+
+        [Tooltip("Flame breaths per second.")]
+        [Min(0f)] public float flameBreathHertz = 1.3f;
+
+        [Header("Art (leave empty for flat colours)")]
+        [Tooltip("Wall tiles. Each wall cell picks one, always the same one for the same cell.")]
+        public Sprite[] wallTiles;
+
+        [Tooltip("The fill of one block cell. Must be near-white: it is tinted teal / yellow / red.")]
+        public Sprite blockCell;
+
+        [Tooltip("Tiled behind the level.")]
+        public Sprite backgroundTile;
+
+        [Tooltip("How many cells wide one background tile is drawn.")]
+        [Min(0.25f)] public float backgroundTileCells = 2f;
         public float shipTiltDegrees = 8f;
         public float hoverBobAmplitude = 0.05f;
         public bool showPushPreview;
@@ -63,6 +97,8 @@ namespace Thunderbirds.Unity
                 KestrelSpeedRatio = kestrelSpeedRatio,
                 FallStepSeconds = fallStepSeconds,
                 CrushGraceSeconds = crushGraceSeconds,
+                RespawnGhostSeconds = respawnGhostSeconds,
+                RefusalHintSeconds = refusalHintSeconds,
                 KestrelPushCapacity = kestrel.pushCapacity,
                 KestrelLoadCapacity = kestrel.loadCapacity,
                 AtlasPushCapacity = atlas.pushCapacity,

@@ -27,11 +27,11 @@ namespace Thunderbirds.Unity
             "A push counts the whole chain,\nincluding blocks resting on top.\n" +
             "Unsupported blocks fall.\nBlocks never rotate or merge.";
 
-        public static string Survival(float crushGraceSeconds, int lives) =>
+        public static string Survival(float crushGraceSeconds, int lives, float respawnGhostSeconds) =>
             "Overloaded? A crush ring gives you\n" +
             $"{Seconds(crushGraceSeconds)} s: release the load, or switch\nships and push it away.\n\n" +
             $"A crush costs one of your {lives} {(lives == 1 ? "life" : "lives")}.\n" +
-            "A blinking ghost waits for its start\narea to clear before returning.\n\n" +
+            $"It returns as a ghost for {Seconds(respawnGhostSeconds)} s:\nblocks fall through, it cannot move.\n\n" +
             "No lives or no oxygen = level failed.";
 
         private static string SpeedLine(float ratio)

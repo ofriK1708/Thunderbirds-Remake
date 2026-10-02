@@ -114,7 +114,7 @@ stateDiagram-v2
 **Load, crush & lives**
 - A ship's **load** is the full weight of every block it carries (including everything stacked on them). A block also held by anything static adds no load. Exception: a block resting only on the two ships (carried by neither) counts fully toward **both** ships' loads.
 - If load > `loadCapacity` (e.g. something fell onto a carried stack), the ship is **Stressed**: it shakes, flashes red, and a countdown ring of `crushGraceSeconds` appears above it. Removing the load in time (scraping it off against a wall, or switching ships and pushing it away) resets the countdown.
-- When the countdown ends, the ship is **crushed**: its carried blocks are released and it loses one of the level's **3 lives**. Only that ship respawns at its start cell; the rest of the level stays as it is. If its start area is occupied, it waits as a **blinking ghost** (not solid, not selectable), control switches to the other ship, and it materialises once the area is clear.
+- When the countdown ends, the ship is **crushed**: its carried blocks are released and it loses one of the level's **3 lives**. Only that ship respawns at its start cell; the rest of the level stays as it is. It always comes back as a **blinking ghost** (not solid, not selectable) for `respawnGhostSeconds`, so the load that crushed it falls through it instead of landing on it again; control switches to the other ship meanwhile. After that time it materialises as soon as its start area is clear.
 - Losing the **last life** fails the level; that ship does not respawn.
 - A materialising ship does **not** take control back — unless the active ship is itself a ghost (both ships were crushed with blocked starts), in which case control goes to whichever ship materialises first.
 
@@ -141,16 +141,21 @@ stateDiagram-v2
 | `pushCapacity` | `ShipConfig` (Kestrel / Atlas) | Max chain weight the ship can push — also sets the colour thresholds | 4 / 8 |
 | `loadCapacity` | `ShipConfig` (Kestrel / Atlas) | Max weight the ship can lift and carry before being stressed | 4 / 8 |
 | `crushGraceSeconds` | `GameConfig` | Time to save a stressed ship — **verify first** that a switch-ships-and-push rescue fits | 3.0 |
+| `respawnGhostSeconds` | `GameConfig` | How long a crushed ship stays a ghost at its start cell: blocks fall through it and it cannot be flown (0 = reappear at once if the start is clear) | 3.0 |
 | `refusalHintSeconds` | `GameConfig` | How long the player pushes into a refused move before the hint popup | 5.0 |
 | `livesPerLevel` | `GameConfig` | Crushes allowed before the level fails | 3 |
 | `defaultTimeLimitSeconds` | `GameConfig` | Oxygen when a level doesn't set its own | 90 |
 | `timeLimitSeconds` | `LevelData` | Oxygen for this level (0 = use default) | per level |
 | `restartHoldSeconds` | `GameConfig` | Hold time before `Restart` triggers | 0.5 |
 | `switchHighlightSeconds` | `GameConfig` | How long the newly active ship pulses after a switch | 1.5 |
+| `shipTurnSeconds` | `GameConfig` | How long a ship takes to turn around (three frames) | 0.18 |
+| `hintBannerSeconds` | `GameConfig` | How long the level-start hint stays on screen | 6 |
+| `lowOxygenSeconds` | `GameConfig` | Oxygen read-out turns red below this | 15 |
+| `flameBreathAmplitude` / `flameBreathHertz` | `GameConfig` | How far and how fast the thruster flames breathe | 0.18 / 1.3 |
 | `shipTiltDegrees` / `hoverBobAmplitude` | `GameConfig` | How alive ships look while moving / hovering | 8° / 0.05 u |
 | `showPushPreview` | `GameConfig` + Options | Warning tint before moves *(polish, default off)* | false |
 
-**Where these live:** a `GameConfig` ScriptableObject, two `ShipConfig` ScriptableObjects, and one `LevelData` asset per level — all editable in the Inspector without recompiling.
+**Where these live:** a `GameConfig` ScriptableObject, two `ShipConfig` ScriptableObjects, and one `LevelData` asset per level — all editable in the Inspector without recompiling. They are assets, not scene objects: menu **Thunderbirds → Open Game Settings** selects `Assets/Config/GameConfig.asset`, whose Inspector also shows both ship configs inline.
 
 **Feel target:** a first-time player finishes L1 within 60 s after reading How to Play; holding a direction for 1 s moves Kestrel ~12 cells with no visible stop between cells; in L4 a player who reacts within 2 s can save a stressed ship.
 
@@ -251,11 +256,11 @@ Colour is never the only cue: a block's class can also be read by counting its c
 
 | Asset | Variants / frames | Source & licence | Use |
 |---|---|---|---|
-| Block cell | 1 plain, borderless, near-white tile — tinted per colour class | CC0 tile — chosen with the final art style | All blocks, any shape |
+| Block cell | 1 near-white stone tile, tinted per colour class (`GameConfig.blockCell`) | Made by the team with Google Gemini; see `Assets/Art/Tiles/SOURCE.md` | All blocks, any shape |
 | Block border & inner-corner pieces | 1 edge strip + 1 corner | Made by team | Per-block outlines |
-| Wall / floor tiles | 3–4 sandstone variants | CC0 tile pack — chosen with the final art style | Level geometry |
-| Kestrel, Atlas | 1 body + thruster frames each | CC0 ship pack — chosen with the final art style (candidates below) | Ships |
-| Dock pads | 2 sizes (2 × 2, 4 × 2) + lit state | Made by team | Win targets |
+| Wall tiles | 4 sandstone variants, chosen per cell (`GameConfig.wallTiles`); 1 dark brick background tile | Made by the team with Google Gemini; see `Assets/Art/Tiles/SOURCE.md` | Level geometry and backdrop |
+| Kestrel, Atlas | Side, three-quarter and front frame each (`Assets/Art/Ships`); left is the mirror | Made by the team with Google Gemini image generation, in the style of the CC0 Foozle *Void - Fleet Pack 2*; see `Assets/Art/Ships/SOURCE.md` | Ships |
+| Dock markers | The ship's initial (K / A) in a glowing ring; dim and pulsing while empty, bright when docked | Made by team, drawn in code (`DockMarkerView`) | Win targets |
 | UI font | Orbitron | Google Fonts, SIL OFL | All UI |
 | SFX — step hum, bump, land, release, stress creak, crush, dock, switch, UI click | 1–2 each | Kenney audio packs (CC0) / generated with jsfxr | *Polish* |
 | Music — menu + level loop | 1 each | Free Thunderbirds-*style* track, CC0 / CC-BY (credited); possibly our own composition | *Polish* |
@@ -362,7 +367,7 @@ graph TD
 
 **Menu flow (#19).** MainMenuView opens a LevelSelectView under its existing Canvas. Five campaign slots read LevelCatalog in L1-L5 order and show unavailable, locked, playable or completed status. Missing assets remain disabled; the separate Sandbox entry loads the preview without affecting campaign progress. LevelProgress persists completion in PlayerPrefs by campaign slot, and completion unlocks the next slot. The `GameManager` singleton carries the selected LevelData across the scene load to LevelView (#18); the playable controller saves progress only after LevelComplete. Back/Cancel restores focus to Play. Options applies and saves fullscreen/windowed mode in standalone builds and restores it at startup; the Editor saves the setting without resizing the editor. Unimplemented audio/push-preview controls are disabled. The existing 1920x1080 CanvasScaler remains in place.
 
-**Level controller.** `LevelView.Start` takes the selected level from `GameManager` (or falls back to `L0_Sandbox` when nothing was selected), builds the walls and docks, and adds a `LevelController` for it. The controller connects the shared `InputReader` to the `Simulation`, ticks it every frame, creates and rebinds the ship and block views, and drives hold-to-restart, pause, the outcome overlays, Next Level and return-to-menu. Campaign levels and the sandbox run the same code; the sandbox has campaign index -1, so it never saves progress or offers Next Level. (Until #18 this class was the temporary `SandboxPreviewController`.) The HUD is still placeholder `OnGUI` text until #16. An explicitly wired Play event on the main menu overrides the Level Select fallback.
+**Level controller.** `LevelView.Start` takes the selected level from `GameManager` (or falls back to `L0_Sandbox` when nothing was selected), builds the walls and docks, and adds a `LevelController` for it. The controller connects the shared `InputReader` to the `Simulation`, ticks it every frame, creates and rebinds the ship and block views, and drives hold-to-restart, pause, the outcome overlays, Next Level and return-to-menu. Campaign levels and the sandbox run the same code; the sandbox has campaign index -1, so it never saves progress or offers Next Level. (Until #18 this class was the temporary `SandboxPreviewController`.) An explicitly wired Play event on the main menu overrides the Level Select fallback.
 
 ```
 ################################
@@ -401,7 +406,11 @@ graph TD
 
 **Level overlays (#21).** The editable `Resources/LevelOverlays.prefab` contains Pause, Failed and Complete panels and nested help/options prefabs. The playable controller pauses on focus loss and connects Resume, Restart, Retry, Level Select and Main Menu. Outcome events freeze gameplay immediately, hold for 0.5 seconds, reveal the result, then lock buttons for another 0.5 seconds and until held submit/click is released. Complete saves campaign progress and shows oxygen remaining; Next Level is disabled for Sandbox and when the next catalog entry is absent. Next Level rebuilds the model and visuals in the current scene. Level Select returns directly to mission selection through a one-shot menu handoff. The production GameManager can reuse the overlay callbacks when #18 arrives.
 
-**Scene flow and camera (#18).** `GameManager` is created on first use and marked `DontDestroyOnLoad`, so neither scene contains it. It holds the selected level (handed to `LevelView` once), the "reopen Level Select" flag used when leaving a level, and is the only caller of `SceneManager.LoadScene` (`PlayLevel`, `PlaySandbox`, `ReturnToMenu`). Unlock progress is read and written through it; `LevelProgress` is the stateless `PlayerPrefs` store behind it. Restart, respawn and Next Level never go through `GameManager`: they rebuild the rules model inside `Game.unity`. `CameraFit` sizes the orthographic camera every frame from the level size and the current aspect ratio — the tighter of "fit the height" and "fit the width", plus a 0.75-cell margin — so a window resize or any resolution keeps the whole level visible, centred, with tomb-void bars on the spare axis. The level is drawn in the middle 66 % of the screen height; the strips above and below belong to the HUD.
+**Scene flow and camera (#18).** `GameManager` is created on first use and marked `DontDestroyOnLoad`, so neither scene contains it. It holds the selected level (handed to `LevelView` once), the "reopen Level Select" flag used when leaving a level, and is the only caller of `SceneManager.LoadScene` (`PlayLevel`, `PlaySandbox`, `ReturnToMenu`). Unlock progress is read and written through it; `LevelProgress` is the stateless `PlayerPrefs` store behind it. Restart, respawn and Next Level never go through `GameManager`: they rebuild the rules model inside `Game.unity`. `CameraFit` sizes the orthographic camera every frame from the level size and the current aspect ratio — the tighter of "fit the height" and "fit the width", plus a 0.75-cell margin — so a window resize or any resolution keeps the whole level visible, centred, with tomb-void bars on the spare axis. The level is placed in the middle 66 % of the screen height; the strips above and below belong to the HUD. The camera itself always renders the whole screen (the band is reached by camera size and position, not by a camera viewport rect), so the HUD strips are cleared every frame.
+
+**HUD (#16).** `HudView` is built in code by `LevelController` (no scene or prefab) on a Screen Space - Overlay canvas below the pause / outcome overlays. It reads the simulation state every frame and decides nothing: oxygen bar and whole seconds (rounded up, red below 15 s), one life icon per `livesPerLevel`, the level name, the active ship with its portrait (a fixed side view, not the live sprite) and the `SwitchShip` binding for the device used last, hold-to-restart progress, and a bottom banner that shows `LevelData.hintText` for 6 s at level start and after each Restart, and short refusal messages after that. The crush countdown ring is a small world-space canvas parented to each `ShipView`, shown only while that ship is stressed and drained from `CrushSecondsLeft / crushGraceSeconds`. The small calculations live in `HudModel` so they are unit-tested. There are no weight numbers on blocks.
+
+**Ship art.** Each `ShipConfig` has three optional sprites (side, three-quarter, front), all drawn facing right with a flat cargo deck on top. `ShipView` scales the side sprite uniformly to the largest size that fits the ship's footprint (never stretched), centres it sideways and puts the top of the sprite on the top edge of the footprint, so carried blocks sit on the deck. A ship faces the way it last moved sideways (vertical moves keep the facing; left is the mirrored sprite), and turning around plays three-quarter, front, three-quarter over 0.18 s. With no sprites assigned the old placeholder rectangle is used. Each frame has a separate flame layer behind the hull that breathes: it stretches and shrinks downward from the nozzles (`flameBreathAmplitude`, `flameBreathHertz`), a little longer while the ship is flying. Walls, block fills and the backdrop also take optional sprites from `GameConfig` (`wallTiles`, `blockCell`, `backgroundTile`); without them the flat palette colours are used. Block outlines and seams are still drawn by `CellView`.
 
 A full input → tick → events → views trace of one move is in [`move-flow.md`](move-flow.md).
 
@@ -478,3 +487,8 @@ A full input → tick → events → views trace of one move is in [`move-flow.m
 | v0.1.4 | 2026-09-26 | §3 Push: holding into a refusal bumps once and retries silently; `refusalHintSeconds` hint popup; blocked reported before too heavy. §7: `RefusalHint` event, `MoveRefused` carries the chain colour (#7) |
 | v0.1.5 | 2026-09-30 | §3 Load, crush & lives: no respawn after the last life; who gets control when a ghost materialises (#14) |
 | v0.1.6 | 2026-10-02 | §7: `GameManager` singleton owns level selection, progress access and scene changes (replaces the static `LevelLaunch`); `CameraFit` camera sizing (#18); `SandboxPreviewController` renamed `LevelController` |
+| v0.1.7 | 2026-10-02 | §7: `HudView` / `HudModel` replace the placeholder `OnGUI` HUD; camera renders full screen and frames the level inside the HUD band (#16) |
+| v0.1.8 | 2026-10-02 | §6/§7: ship sprites with facing and turn frames; L4 "Rockfall" level (falls and the crush countdown, #23) |
+| v0.1.9 | 2026-10-02 | §3: respawn protection — a crushed ship is a ghost for `respawnGhostSeconds`, so its load falls through instead of crushing it again; turn, hint and low-oxygen timings moved into `GameConfig`; Game Settings inspector |
+| v0.1.10 | 2026-10-02 | §6: docks are marked with the ship's initial in a glowing ring instead of a colour block; HUD portrait is a fixed picture |
+| v0.1.11 | 2026-10-02 | §6/§7: wall, block and background tile art; breathing thruster flames; docks are only the letter marker |

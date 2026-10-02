@@ -60,10 +60,11 @@ namespace Thunderbirds.Tests.EditMode
         [Test]
         public void SurvivalCard_ShowsGraceAndLives()
         {
-            var text = HowToPlayText.Survival(2.5f, 3);
+            var text = HowToPlayText.Survival(2.5f, 3, 4f);
             StringAssert.Contains("2.5 s: release the load", text);
             StringAssert.Contains("one of your 3 lives", text);
-            StringAssert.Contains("one of your 1 life", HowToPlayText.Survival(3f, 1));
+            StringAssert.Contains("ghost for 4 s", text);
+            StringAssert.Contains("one of your 1 life", HowToPlayText.Survival(3f, 1, 3f));
         }
 
         [Test]
@@ -93,7 +94,7 @@ namespace Thunderbirds.Tests.EditMode
                 _atlas.pushCapacity = _atlas.loadCapacity = 16;
                 AssertFits(serialized, "shipsText", HowToPlayText.Ships(_kestrel, _atlas, 1.5f));
                 AssertFits(serialized, "blocksText", HowToPlayText.Blocks(_kestrel, _atlas));
-                AssertFits(serialized, "survivalText", HowToPlayText.Survival(12.5f, 10));
+                AssertFits(serialized, "survivalText", HowToPlayText.Survival(12.5f, 10, 12.5f));
             }
             finally
             {

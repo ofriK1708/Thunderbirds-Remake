@@ -34,3 +34,10 @@ MonoBehaviour:
   dockLit: {r: 0.2509804, g: 0.8784314, b: 0.2509804, a: 1}
   uiMuted: {r: 0.53333336, g: 0.53333336, b: 0.53333336, a: 1}
   uiText: {r: 1, g: 1, b: 0.9254902, a: 1}
+  wallTiles:
+  - {fileID: 21300000, guid: d1f523c9d5154c84f8792f9cf6e25f12, type: 3}
+  - {fileID: 21300000, guid: b5db3c36cb26b9f4eaca6318b1dc0bc9, type: 3}
+  - {fileID: 21300000, guid: b4a08d4e40474dc47870ec8709c002b2, type: 3}
+  - {fileID: 21300000, guid: 4a476bbfd364c2d42bb5cbb890a9a30d, type: 3}
+  blockCell: {fileID: 21300000, guid: 01d6bab8109e3cf48b9adf6cf3489eca, type: 3}
+  backgroundTile: {fileID: 21300000, guid: 5e869844b9e23d34ea9261f82af45e0a, type: 3}

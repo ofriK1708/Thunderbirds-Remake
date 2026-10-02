@@ -24,7 +24,7 @@ namespace Thunderbirds.Unity
             {
                 var template = new GameObject("Cell template").AddComponent<CellView>();
                 template.transform.SetParent(transform, false);
-                template.Initialize(sprite, material);
+                template.Initialize(sprite, material, config.blockCell);
                 template.gameObject.SetActive(false);
                 _pool = new ObjectPool<CellView>(template, transform, block.Weight);
             }

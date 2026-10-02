@@ -16,3 +16,10 @@ MonoBehaviour:
   displayName: Atlas
   pushCapacity: 8
   loadCapacity: 8
+  sideSprite: {fileID: 21300000, guid: d99bb3ad5cb345c1a7424975a071a995, type: 3}
+  turnSprite: {fileID: 21300000, guid: fbb550b63b75463194f5b3d2281ccf83, type: 3}
+  frontSprite: {fileID: 21300000, guid: af43debbb4784aa987343cde67e0f1bf, type: 3}
+  sideFlame: {fileID: 21300000, guid: e82894366805731459f371b7efa17ade, type: 3}
+  turnFlame: {fileID: 21300000, guid: e01c7968cab025d4e83be891bd706106, type: 3}
+  frontFlame: {fileID: 21300000, guid: c8aad0f31e5c8ea428a19f3dea3b7e18, type: 3}
+  portraitSprite: {fileID: 21300000, guid: 847b379524da05948a5d6b76f7f3b530, type: 3}

@@ -17,5 +17,21 @@ namespace Thunderbirds.Unity
 
         [Tooltip("Max weight (cells) this ship can lift and carry before it is stressed.")]
         [Min(1)] public int loadCapacity = 4;
+
+        [Header("Art (drawn facing right, flat cargo deck on top)")]
+        [Tooltip("Side profile, hull only. Leave empty to use the placeholder rectangle.")]
+        public Sprite sideSprite;
+        [Tooltip("Three-quarter view, shown for a moment while turning around. Optional.")]
+        public Sprite turnSprite;
+        [Tooltip("Front view, the middle frame of a turn. Optional.")]
+        public Sprite frontSprite;
+
+        [Header("Thruster flames (same width as the hull frame, cut from the flame tops down)")]
+        public Sprite sideFlame;
+        public Sprite turnFlame;
+        public Sprite frontFlame;
+
+        [Tooltip("The still picture shown in the HUD. Falls back to the side sprite.")]
+        public Sprite portraitSprite;
     }
 }

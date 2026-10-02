@@ -75,7 +75,7 @@ namespace Thunderbirds.Editor
 
             var survival = Card(content, "06  KEEP THE RESCUE ALIVE", 580, -192);
             var survivalText = Label(survival, "Danger",
-                HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel),
+                HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel, config.respawnGhostSeconds),
                 21, 0, -23, 486, 249, Paper);
 
             var backRect = Rect("Back Button", content, 0, -444, 310, 66);

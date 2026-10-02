@@ -15,6 +15,12 @@ namespace Thunderbirds.Rules
         public int Load { get; internal set; }
         public float CrushSecondsLeft { get; internal set; }
 
+        /// <summary>
+        /// Respawn protection: while this is above 0 a ghost stays a ghost even if its start area is clear,
+        /// so whatever crushed it can fall through instead of landing on it again (GDD §3).
+        /// </summary>
+        public float GhostSecondsLeft { get; internal set; }
+
         /// <summary>Stage 4's handoff to lives/respawn in stage 5 (#14).</summary>
         public bool IsCrushDue => !IsGhost && IsStressed && CrushSecondsLeft <= 0f;
 

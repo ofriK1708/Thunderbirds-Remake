@@ -27,10 +27,14 @@ namespace Thunderbirds.Unity
         // Clockwise from top-right: a corner exists when both sides, but not the diagonal, belong to us.
         public int InnerCorners { get; private set; }
 
-        public void Initialize(Sprite sprite, Material material)
+        /// <param name="fillSprite">
+        /// Optional texture for the cell's fill. Edges and corners always use the plain <paramref name="sprite"/>,
+        /// so the outline stays a flat colour.
+        /// </param>
+        public void Initialize(Sprite sprite, Material material, Sprite fillSprite = null)
         {
             if (fill != null) return;
-            fill = NewPart("Fill", sprite, material, 0);
+            fill = NewPart("Fill", fillSprite != null ? fillSprite : sprite, material, 0);
             edges = new SpriteRenderer[4];
             corners = new SpriteRenderer[4];
             for (var i = 0; i < 4; i++)

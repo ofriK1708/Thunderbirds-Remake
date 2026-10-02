@@ -52,7 +52,7 @@ namespace Thunderbirds.Tests.EditMode
         }
 
         [Test]
-        public void Apply_CentresTheCameraOnTheLevel_AndNeverScrolls()
+        public void Apply_RendersTheWholeScreen_AndPutsTheLevelInsideTheHudBand()
         {
             var root = new GameObject("Level").transform;
             var camera = new GameObject("Camera").AddComponent<Camera>();
@@ -62,9 +62,22 @@ namespace Thunderbirds.Tests.EditMode
                 CameraFit.Apply(camera, root, 32, 9, Color.black);
 
                 Assert.IsTrue(camera.orthographic);
-                Assert.AreEqual(CameraFit.LevelViewport, camera.rect);
-                Assert.AreEqual(new Vector3(3f + 16f, -2f + 4.5f, -10f), camera.transform.position);
-                Assert.AreEqual(CameraFit.OrthographicSize(32, 9, camera.aspect), camera.orthographicSize, 1e-4f);
+                // Full screen, so the HUD strips are cleared every frame (an overlay HUD smears otherwise).
+                Assert.AreEqual(new Rect(0f, 0f, 1f, 1f), camera.rect);
+                Assert.AreEqual(CameraFit.FullScreenSize(32, 9, camera.aspect), camera.orthographicSize, 1e-4f);
+
+                var band = CameraFit.LevelViewport;
+                var centre = camera.WorldToViewportPoint(root.TransformPoint(new Vector3(16f, 4.5f, 0f)));
+                Assert.AreEqual(0.5f, centre.x, 1e-4f);
+                Assert.AreEqual(band.center.y, centre.y, 1e-4f, "level centre sits on the band centre");
+
+                var margin = CameraFit.MarginCells;
+                var bottomLeft = camera.WorldToViewportPoint(root.TransformPoint(new Vector3(-margin, -margin, 0f)));
+                var topRight = camera.WorldToViewportPoint(root.TransformPoint(new Vector3(32f + margin, 9f + margin, 0f)));
+                Assert.GreaterOrEqual(bottomLeft.x, -1e-4f);
+                Assert.LessOrEqual(topRight.x, 1f + 1e-4f);
+                Assert.GreaterOrEqual(bottomLeft.y, band.yMin - 1e-4f, "level stays above the bottom HUD strip");
+                Assert.LessOrEqual(topRight.y, band.yMax + 1e-4f, "level stays below the top HUD strip");
             }
             finally
             {

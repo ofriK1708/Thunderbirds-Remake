@@ -15,6 +15,9 @@ namespace Thunderbirds.Rules
         public float FallStepSeconds = 0.10f;
         public float CrushGraceSeconds = 3f;
 
+        /// <summary>After a crush the ship is a ghost for at least this long. 0 = reappear at once if the start is clear.</summary>
+        public float RespawnGhostSeconds = 3f;
+
         /// <summary>Keep pushing into a refused move this long and the simulation raises RefusalHint.</summary>
         public float RefusalHintSeconds = 5f;
 
@@ -34,6 +37,8 @@ namespace Thunderbirds.Rules
         {
             if (CrushGraceSeconds <= 0f || float.IsNaN(CrushGraceSeconds) || float.IsInfinity(CrushGraceSeconds))
                 throw new ArgumentException("CrushGraceSeconds must be finite and > 0");
+            if (RespawnGhostSeconds < 0f || float.IsNaN(RespawnGhostSeconds) || float.IsInfinity(RespawnGhostSeconds))
+                throw new ArgumentException("RespawnGhostSeconds must be finite and >= 0");
             if (AtlasMoveStepSeconds <= 0f) throw new ArgumentException("AtlasMoveStepSeconds must be > 0");
             if (KestrelSpeedRatio <= 0f) throw new ArgumentException("KestrelSpeedRatio must be > 0");
             if (FallStepSeconds <= 0f) throw new ArgumentException("FallStepSeconds must be > 0");
