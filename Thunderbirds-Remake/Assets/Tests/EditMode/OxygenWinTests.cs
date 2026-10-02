@@ -88,8 +88,11 @@ namespace Thunderbirds.Tests.EditMode
             if (ghost) DockBoth();
             else _state.GetShip(ShipId.Kestrel).Position = _state.GetShip(ShipId.Kestrel).Dock;
             _state.GetShip(ShipId.Atlas).IsGhost = ghost;
+            // Checked directly: a real ghost waits at its (blocked) start, and stage 5 (#14) would
+            // materialise this hand-placed one on its clear dock before the success check ran.
+            if (ghost) Assert.IsFalse(WinChecker.IsComplete(_state));
             sim.Tick(0);
-            Assert.AreEqual(SimStatus.Playing, sim.State.Status);
+            if (!ghost) Assert.AreEqual(SimStatus.Playing, sim.State.Status);
         }
 
         [Test]
