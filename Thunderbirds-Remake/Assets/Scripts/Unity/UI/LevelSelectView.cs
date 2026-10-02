@@ -1,7 +1,6 @@
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 namespace Thunderbirds.Unity
@@ -37,8 +36,7 @@ namespace Thunderbirds.Unity
             view.Label("More missions will appear as they become available.", new Vector2(0, -125), new Vector2(1500, 60), 23, font);
             view._sandbox = view.Button("Sandbox", new Vector2(0, -245), new Vector2(510, 76), font, () =>
             {
-                LevelLaunch.Clear();
-                SceneManager.LoadScene("Game");
+                GameManager.Instance.PlaySandbox();
             });
             view.Button("Back", new Vector2(0, -345), new Vector2(510, 76), font, view.Close);
             root.SetActive(false);
@@ -56,10 +54,10 @@ namespace Thunderbirds.Unity
             for (var i = 0; i < _levels.Length; i++)
             {
                 var available = _catalog != null && _catalog.Get(i) != null;
-                var unlocked = LevelProgress.IsUnlocked(i);
+                var unlocked = GameManager.Instance.IsUnlocked(i);
                 _levels[i].interactable = available && unlocked;
                 _levels[i].GetComponentInChildren<TMP_Text>().text = $"L{i + 1}\n" +
-                    (!available ? "COMING SOON" : LevelProgress.IsCompleted(i) ? "COMPLETED" : unlocked ? "PLAY" : "LOCKED");
+                    (!available ? "COMING SOON" : GameManager.Instance.IsCompleted(i) ? "COMPLETED" : unlocked ? "PLAY" : "LOCKED");
                 if (first == null && _levels[i].interactable) first = _levels[i].gameObject;
             }
             if (EventSystem.current != null) EventSystem.current.SetSelectedGameObject(first != null ? first : _sandbox.gameObject);
@@ -67,7 +65,7 @@ namespace Thunderbirds.Unity
 
         private void Launch(int index)
         {
-            if (LevelLaunch.Select(_catalog, index)) SceneManager.LoadScene("Game");
+            GameManager.Instance.PlayLevel(_catalog, index);
         }
         public void Close()
         {

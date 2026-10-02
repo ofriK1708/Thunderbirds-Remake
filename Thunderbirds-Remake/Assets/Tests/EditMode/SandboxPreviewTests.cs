@@ -52,7 +52,7 @@ namespace Thunderbirds.Tests.EditMode
             yield return null;
             yield return null;
             Assert.AreEqual("Game", SceneManager.GetActiveScene().name);
-            var preview = Object.FindFirstObjectByType<SandboxPreviewController>();
+            var preview = Object.FindFirstObjectByType<LevelController>();
             Assert.IsNotNull(preview, $"LevelView.Start has not run yet (frame {Time.frameCount}).");
             Assert.IsNotNull(preview.State);
             Assert.AreEqual(2, preview.State.Ships.Count);
@@ -126,7 +126,7 @@ namespace Thunderbirds.Tests.EditMode
 
             yield return SceneManager.LoadSceneAsync("MainMenu");
             yield return null;
-            Assert.IsNull(Object.FindFirstObjectByType<SandboxPreviewController>());
+            Assert.IsNull(Object.FindFirstObjectByType<LevelController>());
             Assert.IsNotNull(Object.FindFirstObjectByType<MainMenuView>());
 
             // Exercise the real menu's shared UI map, including submit/cancel and a gamepad launch.
@@ -144,7 +144,7 @@ namespace Thunderbirds.Tests.EditMode
             Assert.AreEqual("L1 Button", EventSystem.current.currentSelectedGameObject.name);
             yield return TapGamepad(GamepadButton.South);
             yield return null;
-            var gamepadPreview = Object.FindFirstObjectByType<SandboxPreviewController>();
+            var gamepadPreview = Object.FindFirstObjectByType<LevelController>();
             Assert.IsNotNull(gamepadPreview);
             var campaignStart = gamepadPreview.State.GetShip(ShipId.Kestrel).Position;
             Assert.AreEqual(new GridPos(2, 6), campaignStart, "gamepad launches the first campaign level");
@@ -175,12 +175,12 @@ namespace Thunderbirds.Tests.EditMode
             var catalog = AssetDatabase.LoadAssetAtPath<LevelCatalog>("Assets/Levels/LevelCatalog.asset");
             var progressKey = LevelProgress.Key(0);
             var savedProgress = PlayerPrefs.HasKey(progressKey) ? (int?)PlayerPrefs.GetInt(progressKey) : null;
-            Assert.IsTrue(LevelLaunch.Select(catalog, 0));
+            Assert.IsTrue(GameManager.Instance.SelectLevel(catalog, 0));
             yield return SceneManager.LoadSceneAsync("Game");
             yield return null;
-            var preview = Object.FindFirstObjectByType<SandboxPreviewController>();
+            var preview = Object.FindFirstObjectByType<LevelController>();
             var view = preview.GetComponentInChildren<LevelOverlayView>();
-            var sim = (Simulation)typeof(SandboxPreviewController).GetField("_simulation", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(preview);
+            var sim = (Simulation)typeof(LevelController).GetField("_simulation", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(preview);
             try
             {
                 preview.SendMessage("OnApplicationFocus", false);
@@ -204,7 +204,7 @@ namespace Thunderbirds.Tests.EditMode
                 var sceneHandle = SceneManager.GetActiveScene().handle;
                 OverlayButton(view, "next").onClick.Invoke();
                 Assert.AreEqual(sceneHandle, SceneManager.GetActiveScene().handle);
-                Assert.AreSame(preview, Object.FindFirstObjectByType<SandboxPreviewController>());
+                Assert.AreSame(preview, Object.FindFirstObjectByType<LevelController>());
                 Assert.AreEqual(new GridPos(8, 1), sim.State.GetShip(ShipId.Kestrel).Start);
                 Assert.AreEqual(SimStatus.Playing, sim.State.Status);
                 Assert.IsFalse(view.IsVisible);
