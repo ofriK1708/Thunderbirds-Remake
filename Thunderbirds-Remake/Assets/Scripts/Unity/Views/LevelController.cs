@@ -2,18 +2,18 @@ using System.Collections.Generic;
 using Thunderbirds.Rules;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.SceneManagement;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 
 namespace Thunderbirds.Unity
 {
     /// <summary>
-    /// Temporary playable preview for LevelView.previewLevel. Delegates all movement to Simulation;
-    /// creates simple reusable visuals once, without editing either team-owned scene.
-    /// Replaced by the production LevelController and entity views as they arrive. Uses the shared InputReader.
+    /// Runs one level in Game.unity (GDD §7 LevelController): owns the Simulation and ticks it every frame,
+    /// connects the shared InputReader, creates and rebinds the ship and block views, shows the overlays and
+    /// reports completion to GameManager. Used for campaign levels and the sandbox alike (campaignIndex -1).
+    /// Holds no rules: every decision about a move is the Simulation's.
     /// </summary>
-    public sealed class SandboxPreviewController : MonoBehaviour
+    public sealed class LevelController : MonoBehaviour
     {
         private GameConfig _config;
         private Simulation _simulation;
@@ -128,12 +128,7 @@ namespace Thunderbirds.Unity
         {
             foreach (var block in State.Blocks)
                 _blocks[block.Id].SyncPosition(block);
-            if (_camera == null) return;
-            _camera.orthographic = true;
-            _camera.rect = new Rect(0, 0.16f, 1, 0.66f);
-            _camera.backgroundColor = _config.tombVoid;
-            _camera.transform.position = transform.TransformPoint(new Vector3(State.Width * 0.5f, State.Height * 0.5f, -10));
-            _camera.orthographicSize = Mathf.Max(State.Height * 0.5f + 0.75f, (State.Width * 0.5f + 0.75f) / _camera.aspect);
+            if (_camera != null) CameraFit.Apply(_camera, transform, State.Width, State.Height, _config.tombVoid);
         }
 
         private void OnMoveRefused(MoveRefused refused)
@@ -180,7 +175,7 @@ namespace Thunderbirds.Unity
         }
 
         private bool HasNext => _campaignIndex >= 0 && _overlays.Catalog != null &&
-            _overlays.Catalog.Get(_campaignIndex + 1) != null && LevelProgress.IsUnlocked(_campaignIndex + 1);
+            _overlays.Catalog.Get(_campaignIndex + 1) != null && GameManager.Instance.IsUnlocked(_campaignIndex + 1);
 
         private void NextLevel()
         {
@@ -195,8 +190,7 @@ namespace Thunderbirds.Unity
         private void LeaveLevel(bool select)
         {
             _simulation.ClearInput(); _input.Disable();
-            LevelLaunch.Clear(); LevelLaunch.OpenSelection = select;
-            SceneManager.LoadScene("MainMenu");
+            GameManager.Instance.ReturnToMenu(openLevelSelect: select);
         }
 
         private void OnApplicationFocus(bool focused)
@@ -244,7 +238,7 @@ namespace Thunderbirds.Unity
 
         private void OnLevelComplete(LevelComplete completed)
         {
-            if (_campaignIndex >= 0) LevelProgress.Complete(_campaignIndex);
+            if (_campaignIndex >= 0) GameManager.Instance.CompleteLevel(_campaignIndex);
             ShowOutcome(true, FailReason.OutOfOxygen);
         }
 

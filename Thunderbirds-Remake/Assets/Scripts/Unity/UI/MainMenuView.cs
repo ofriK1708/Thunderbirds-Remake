@@ -52,11 +52,7 @@ namespace Thunderbirds.Unity
                 EventSystem.current.SetSelectedGameObject(
                     playButton.interactable ? playButton.gameObject :
                     howToPlayButton.interactable ? howToPlayButton.gameObject : quitButton.gameObject);
-            if (LevelLaunch.OpenSelection)
-            {
-                LevelLaunch.OpenSelection = false;
-                Play();
-            }
+            if (GameManager.Instance.ConsumeOpenLevelSelect()) Play();
         }
 
         public void ShowHowToPlay()

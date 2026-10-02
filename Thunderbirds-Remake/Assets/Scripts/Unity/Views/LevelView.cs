@@ -21,8 +21,8 @@ namespace Thunderbirds.Unity
         [Tooltip("Enough for the largest level's wall cells, so rebuilding never instantiates.")]
         [SerializeField, Min(0)] private int wallPrewarm = 400;
 
-        [Header("Preview (until LevelController exists)")]
-        [Tooltip("If set, this level is built on Start. LevelController will call Build instead.")]
+        [Header("Sandbox")]
+        [Tooltip("Built on Start when no campaign level was selected (the Sandbox button, or pressing Play in Game.unity).")]
         [SerializeField] private LevelData previewLevel;
 
         [Tooltip("Dock pads are drawn this dim until their ship docks (lit state arrives with docking).")]
@@ -45,13 +45,13 @@ namespace Thunderbirds.Unity
 
         private void Start()
         {
-            var selected = LevelLaunch.Take(out var campaignIndex);
+            var selected = GameManager.Instance.TakeSelection(out var campaignIndex);
             var data = selected != null ? selected : previewLevel;
             if (Level == null && data != null)
             {
                 Build(LevelParser.Parse(data.grid, config.atlas.pushCapacity));
-                // The preview supplies a playable bridge until the production LevelController exists.
-                gameObject.AddComponent<SandboxPreviewController>().Initialize(config, data, Level, dockPadPrefab, campaignIndex);
+                // The controller runs the level; walls and docks stay here so Next Level can rebuild them from the pools.
+                gameObject.AddComponent<LevelController>().Initialize(config, data, Level, dockPadPrefab, campaignIndex);
             }
         }
 

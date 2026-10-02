@@ -37,7 +37,7 @@ namespace Thunderbirds.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            LevelLaunch.Clear();
+            GameManager.ResetInstance();
             if (_root != null) Object.DestroyImmediate(_root);
             Object.DestroyImmediate(_catalog); Object.DestroyImmediate(_level);
             foreach (var pair in _saved)
@@ -62,12 +62,12 @@ namespace Thunderbirds.Tests.EditMode
         [Test]
         public void Selection_RejectsLockedAndMissing_AndHandoffIsConsumedOnce()
         {
-            Assert.IsFalse(LevelLaunch.Select(_catalog, 1));
-            Assert.IsFalse(LevelLaunch.Select(null, 0));
-            Assert.IsTrue(LevelLaunch.Select(_catalog, 0));
-            Assert.AreEqual(_level, LevelLaunch.Take(out var index));
+            Assert.IsFalse(GameManager.Instance.SelectLevel(_catalog, 1));
+            Assert.IsFalse(GameManager.Instance.SelectLevel(null, 0));
+            Assert.IsTrue(GameManager.Instance.SelectLevel(_catalog, 0));
+            Assert.AreEqual(_level, GameManager.Instance.TakeSelection(out var index));
             Assert.AreEqual(0, index);
-            Assert.IsNull(LevelLaunch.Take(out index));
+            Assert.IsNull(GameManager.Instance.TakeSelection(out index));
             Assert.AreEqual(-1, index);
         }
         [Test]
