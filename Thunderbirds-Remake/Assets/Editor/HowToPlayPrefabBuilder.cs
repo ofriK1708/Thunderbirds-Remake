@@ -2,6 +2,7 @@ using System;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 using Thunderbirds.Unity;
 using Object = UnityEngine.Object;
@@ -11,6 +12,8 @@ namespace Thunderbirds.Editor
     public static class HowToPlayPrefabBuilder
     {
         private const string Path = "Assets/Prefabs/HowToPlayPanel.prefab";
+        private const string ConfigPath = "Assets/Config/GameConfig.asset";
+        private const string ActionsPath = "Assets/InputSystem_Actions.inputactions";
         private static TMP_FontAsset font;
         private static readonly Color Paper = Hex("FFFFEC");
         private static readonly Color Gold = Hex("E0A040");
@@ -20,6 +23,10 @@ namespace Thunderbirds.Editor
         {
             font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/Art/Fonts/Orbitron SDF.asset");
             if (font == null) throw new InvalidOperationException("Build the main menu first to install Orbitron.");
+            var config = AssetDatabase.LoadAssetAtPath<GameConfig>(ConfigPath);
+            if (config == null || config.kestrel == null || config.atlas == null)
+                throw new InvalidOperationException($"{ConfigPath} with both ShipConfigs is required.");
+            var actions = AssetDatabase.LoadAssetAtPath<InputActionAsset>(ActionsPath);
             var root = new GameObject("HowToPlayPanel", typeof(RectTransform), typeof(Canvas),
                 typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(HowToPlayView));
             root.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
@@ -43,13 +50,13 @@ namespace Thunderbirds.Editor
                 21, 0, -23, 486, 249, Paper);
 
             var ships = Card(content, "02  TWO SHIPS, ONE PILOT", 0, 163);
-            Label(ships, "Ships",
-                "<color=#E0A040>KESTREL  /  2 x 2 cells</color>\nSmall and fast. Fits narrow gaps\nand handles lighter loads.\n\n<color=#E0A040>ATLAS  /  4 x 2 cells</color>\nLarger and slower. Moves heavier\nloads to clear the way.\n\nBoth ships hover when stopped.",
+            var shipsText = Label(ships, "Ships",
+                HowToPlayText.Ships(config.kestrel, config.atlas, config.kestrelSpeedRatio),
                 21, 0, -23, 486, 249, Paper);
 
             var blocks = Card(content, "03  READ THE BLOCKS", 580, 163);
-            Label(blocks, "Weights",
-                "<color=#25BCBC>TEAL</color>     Either ship can push\n<color=#FFFF40>YELLOW</color>  Atlas is needed\n<color=#E04040>RED</color>       Too heavy for either\n\nWeight = number of occupied cells.\nA push counts the whole chain,\nincluding blocks resting on top.\nUnsupported blocks fall.\nBlocks never rotate or merge.",
+            var blocksText = Label(blocks, "Weights",
+                HowToPlayText.Blocks(config.kestrel, config.atlas),
                 21, 0, -23, 486, 249, Paper);
 
             var carry = Card(content, "04  CARRY & RELEASE", -580, -192);
@@ -67,8 +74,8 @@ namespace Thunderbirds.Editor
             Label(example, "Legend", "Teal: block    Light: ship    Gold: wall", 16, 0, -123, 490, 30, Paper, TextAlignmentOptions.Center);
 
             var survival = Card(content, "06  KEEP THE RESCUE ALIVE", 580, -192);
-            Label(survival, "Danger",
-                "Overloaded? A crush ring counts down.\nRelease the load or switch ships\nto push it away before time runs out.\n\nA crush costs one of your 3 lives.\nA blinking ghost waits for its start\narea to clear before returning.\n\nNo lives or no oxygen = level failed.",
+            var survivalText = Label(survival, "Danger",
+                HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel),
                 21, 0, -23, 486, 249, Paper);
 
             var backRect = Rect("Back Button", content, 0, -444, 310, 66);
@@ -86,6 +93,11 @@ namespace Thunderbirds.Editor
             Set(view, "content", content);
             Set(view, "backButton", back);
             Set(view, "controlsText", controlsText);
+            Set(view, "shipsText", shipsText);
+            Set(view, "blocksText", blocksText);
+            Set(view, "survivalText", survivalText);
+            Set(view, "config", config);
+            Set(view, "gameplayActions", actions);
             Set(handler, "screen", view);
             root.SetActive(false);
             PrefabUtility.SaveAsPrefabAsset(root, Path);

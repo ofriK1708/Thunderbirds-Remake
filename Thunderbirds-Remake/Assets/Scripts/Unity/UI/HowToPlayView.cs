@@ -14,8 +14,13 @@ namespace Thunderbirds.Unity
         [SerializeField] private RectTransform content;
         [SerializeField] private Button backButton;
         [SerializeField] private TMP_Text controlsText;
-        [Tooltip("Optional: assign the actual gameplay actions when they are implemented.")]
+        [Tooltip("Bindings shown on the controls card; falls back to the default keys when unset.")]
         [SerializeField] private InputActionAsset gameplayActions;
+        [Tooltip("Capacities, speed, crush grace and lives are read from here each time the screen opens.")]
+        [SerializeField] private GameConfig config;
+        [SerializeField] private TMP_Text shipsText;
+        [SerializeField] private TMP_Text blocksText;
+        [SerializeField] private TMP_Text survivalText;
 
         private GameObject returnPanel;
         private GameObject returnSelection;
@@ -53,6 +58,7 @@ namespace Thunderbirds.Unity
             backButton.onClick.AddListener(Close);
             FitContent();
             RefreshControls();
+            RefreshConfigCards();
             deviceSubscription = InputSystem.onAnyButtonPress.Call(control =>
             {
                 if (!(control.device is Gamepad) && !(control.device is Keyboard) && !(control.device is Mouse)) return;
@@ -86,6 +92,14 @@ namespace Thunderbirds.Unity
             controlsText.text = (gamepad ? "<color=#E0A040>GAMEPAD</color>" : "<color=#E0A040>KEYBOARD + MOUSE</color>")
                 + $"\nMove     {move}\nSwitch   {change}\nRestart  Hold {restart}\nPause    {pause}"
                 + "\n\nHold a direction to keep moving.\nOnly the selected ship moves.";
+        }
+
+        private void RefreshConfigCards()
+        {
+            if (config == null || config.kestrel == null || config.atlas == null) return; // keep the built-in text
+            if (shipsText != null) shipsText.text = HowToPlayText.Ships(config.kestrel, config.atlas, config.kestrelSpeedRatio);
+            if (blocksText != null) blocksText.text = HowToPlayText.Blocks(config.kestrel, config.atlas);
+            if (survivalText != null) survivalText.text = HowToPlayText.Survival(config.crushGraceSeconds, config.livesPerLevel);
         }
 
         private string Binding(string name, string fallback)
