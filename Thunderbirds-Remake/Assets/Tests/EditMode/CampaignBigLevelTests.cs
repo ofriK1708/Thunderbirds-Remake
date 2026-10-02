@@ -7,7 +7,7 @@ using UnityEditor;
 namespace Thunderbirds.Tests.EditMode
 {
     /// <summary>
-    /// L6 - The Hook, L7 - The Gate and L8 - The Cork: the three big levels (L6 is 50 cells wide, L7 and L8 are 80), played through the real
+    /// L6 - The Hook, L7 - The Gate and L8 - The Cork: the three big levels (50 to 65 cells wide), played through the real
     /// rules from the catalog. A route is a script: R3 L2 U1 D4 move the active ship that many cells,
     /// S switches ship, W2 waits two seconds.
     /// </summary>
@@ -153,13 +153,13 @@ namespace Thunderbirds.Tests.EditMode
         public void L7_AtlasSinksTheCup_OpensTheGate_AndBothClimbTheShaft()
         {
             Load(6, "L7_TheGate");
-            Play("S R45");
+            Play("S R32");
             Assert.AreEqual(3, Block('c').Position.Y, "the cup sank into the pit, flush with the corridor floor");
 
-            Play("U9 L19 W2");
+            Play("U9 L6 W2");
             Assert.AreEqual(1, Block('d').Position.Y, "the gate fell down the shaft and through the floor into the cellar");
 
-            Play("R19 D9 S D4 R32 U3 R4 U8 S L24 U12");
+            Play("R6 D9 S D4 R32 U3 R4 U8 S L11 U12");
             AssertComplete();
         }
 
@@ -170,7 +170,7 @@ namespace Thunderbirds.Tests.EditMode
             Play("U7 R32 D8");
             Assert.AreEqual(8, Block('a').Position.Y, "the block fell down the far side onto the low road");
 
-            Play("S R45 U9 L19 W2 R19 D9 S R4 U8 S L24 U12");
+            Play("S R32 U9 L6 W2 R6 D9 S R4 U8 S L11 U12");
             AssertComplete();
         }
 
@@ -178,7 +178,7 @@ namespace Thunderbirds.Tests.EditMode
         public void L7_KestrelWaitingInTheShaft_IsCrushedByTheGate()
         {
             Load(6, "L7_TheGate");
-            Play("S R45 S D4 R32 U3 R6 S U9 L19");
+            Play("S R32 S D4 R32 U3 R6 S U9 L6");
             Wait(0.5f);
             Assert.IsTrue(_sim.State.GetShip(ShipId.Kestrel).IsStressed, "the gate landed on Kestrel");
 
@@ -204,7 +204,7 @@ namespace Thunderbirds.Tests.EditMode
         }
 
         [Test]
-        public void L8_AtlasCarriesTheStoneAway_CorkDropsFlush_ThenAtlasClearsTheDocks()
+        public void L8_AtlasCarriesTheStoneAway_KestrelDropsTheBlockIntoThePit_AtlasPushesTheBar()
         {
             Load(7, "L8_TheCork");
             Play("S U5 R26 U7 L5 U1");
@@ -215,20 +215,41 @@ namespace Thunderbirds.Tests.EditMode
             Play("R3 W1");
             Assert.AreEqual(13, Block('c').Position.Y, "the cork's top is now the floor of Kestrel's corridor");
 
-            Play("R2 D8 R21 U11 R22 L2");
-            Assert.AreEqual(16, Block('b').Position.Y, "the small block was pushed into the pit");
-            Assert.AreEqual(74, Block('e').Position.X, "the bar is against the far wall, clear of both docks");
+            Play("S R14 U2 R10 D2 R8 U2 R10 D3 R4 W1"); // through the loft, down the chimney into the gap, push
+            Assert.AreEqual(16, Block('b').Position.Y, "the purple block lies in the pit, flush with the floor");
 
-            Play("S R14 U2 R10 D2 R35 U1 R12 D2");
+            Play("R2 U3 S R2 D8 R6 U11 R22 L2"); // Kestrel waits above the docks
+            Assert.AreEqual(59, Block('e').Position.X, "the bar is against the far wall, clear of both docks");
+
+            Play("S R8 D3");
             AssertComplete();
+        }
+
+        [Test]
+        public void L8_AtlasPushesBarIntoBlock_TheyAreTooHeavyTogether_AndThePathStaysBlocked()
+        {
+            Load(7, "L8_TheCork");
+            Assert.LessOrEqual(Block('b').Weight, _config.kestrel.pushCapacity, "purple: Kestrel can push it");
+            Assert.LessOrEqual(Block('e').Weight, _config.atlas.pushCapacity, "blue: Atlas can push it alone");
+            Assert.Greater(Block('e').Weight + Block('b').Weight, _config.atlas.pushCapacity, "red together");
+
+            Play("S U5 R26 U7 L5 U1 R3 R2 D8 R6 U11");
+            Assert.IsFalse(TryMove(Direction.Right, 22), "the bar reaches the block and the pair will not move");
+            Assert.AreEqual(RefuseReason.TooHeavy, LastRefusal().Reason);
+            Assert.AreEqual(ColourClass.TooHeavy, LastRefusal().ChainColour, "flashes red: no ship can push it");
+            Assert.IsFalse(TryMove(Direction.Up, 1), "and the ceiling is too low to fly over the pair");
+
+            Play("L3 D2 S R14 U2 R10 D2 R8 U2 R10"); // Atlas backs down the shaft; Kestrel goes to the chimney
+            Assert.IsFalse(TryMove(Direction.Down, 3), "the bar now lies under the chimney: only a restart helps");
+            Assert.AreEqual(SimStatus.Playing, _sim.State.Status);
         }
 
         [Test]
         public void L8_KestrelDockedEarly_IsInTheBarsWay_AndMustLiftOffForAtlas()
         {
             Load(7, "L8_TheCork");
-            Play("R14 U2 R6 S U5 R26 U7 L5 U1 R3 S R4 D2 R35 U1 R12 D2"); // Kestrel waits at the cork, then docks
-            Play("S R2 D8 R21 U11");
+            Play("S U5 R26 U7 L5 U1 R3 S R14 U2 R10 D2 R8 U2 R10 D3 R4 W1 R10"); // cork, pit, and Kestrel docks
+            Play("S R2 D8 R6 U11");
             Assert.IsFalse(TryMove(Direction.Right, 22), "the bar runs into Kestrel on its dock");
             Assert.AreEqual(RefuseReason.Blocked, LastRefusal().Reason);
             Assert.AreEqual(SimStatus.Playing, _sim.State.Status);

@@ -64,8 +64,8 @@ This is a university final project by **Ofri Kuperberg** and **Rotem Saraf**.
 | L4 - Rockfall | Falling blocks and the crush countdown | 90 s |
 | L5 - The Vault | Everything at once, with little oxygen | 60 s |
 | L6 - The Hook | Atlas holds a block up while Kestrel passes; order matters | 120 s |
-| L7 - The Gate | A ship can be what holds a block up; opening a gate from the far side | 150 s |
-| L8 - The Cork | Lifting a block and carrying it out from under another | 150 s |
+| L7 - The Gate | A ship can be what holds a block up; opening a gate from the far side | 120 s |
+| L8 - The Cork | Carrying a block out from under another; two blocks that are too heavy together | 150 s |
 
 There is also a **Sandbox** level for trying things out. It does not affect progress.
 
