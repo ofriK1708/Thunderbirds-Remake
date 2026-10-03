@@ -8,6 +8,7 @@ namespace Thunderbirds.Unity
     /// <summary>Campaign selection built under the existing menu Canvas without editing scenes.</summary>
     public sealed class LevelSelectView : MonoBehaviour, ICancelHandler
     {
+        private const int Columns = 4; // level tiles per row
         private readonly Button[] _levels = new Button[LevelProgress.LevelCount];
         private LevelCatalog _catalog;
         private GameObject _caller;
@@ -30,10 +31,9 @@ namespace Thunderbirds.Unity
             for (var i = 0; i < view._levels.Length; i++)
             {
                 var index = i;
-                view._levels[i] = view.Button("L" + (i + 1), new Vector2((i - 2) * 290, 50), new Vector2(260, 190), font,
+                view._levels[i] = view.Button("L" + (i + 1), new Vector2((i % Columns - (Columns - 1) * 0.5f) * 290, 95 - i / Columns * 170), new Vector2(260, 150), font,
                     () => view.Launch(index));
             }
-            view.Label("More missions will appear as they become available.", new Vector2(0, -125), new Vector2(1500, 60), 23, font);
             view._sandbox = view.Button("Sandbox", new Vector2(0, -245), new Vector2(510, 76), font, () =>
             {
                 GameManager.Instance.PlaySandbox();

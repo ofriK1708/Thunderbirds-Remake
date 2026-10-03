@@ -6,7 +6,7 @@
    Click inside the Game view to give it keyboard focus. Quit stops Play mode in the Editor and exits in a standalone build.
 
 The prefab contains an editable Canvas, background, Orbitron title and four buttons.
-How to Play and Options are enabled and open their connected panels. Play opens Level Select. Its L1-L5 tiles read `Assets/Levels/LevelCatalog.asset` in campaign order. The catalog is currently empty: missing missions show COMING SOON and cannot launch. Sandbox remains available separately and never changes campaign progress. Add authored LevelData assets to the catalog to enable the campaign slots.
+How to Play and Options are enabled and open their connected panels. Play opens Level Select. Its L1-L8 tiles read `Assets/Levels/LevelCatalog.asset` in campaign order. The catalog is currently empty: missing missions show COMING SOON and cannot launch. Sandbox remains available separately and never changes campaign progress. Add authored LevelData assets to the catalog to enable the campaign slots.
 The sandbox shows placeholder ships and blocks and uses the real simulation for movement, sideways pushes and gravity.
 To see a fall, switch to Atlas and move left until it clears the yellow block above it. The unsupported block drops.
 WASD/arrows move, Space/Tab switches ships, holding R restarts, and Escape pauses.
